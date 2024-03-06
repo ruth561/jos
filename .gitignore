@@ -9,3 +9,6 @@
 
 # File System for QEMU
 boot/fs
+
+# misc
+.clangd

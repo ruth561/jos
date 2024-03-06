@@ -13,3 +13,8 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	@echo "\tCC\t$@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
+
+.PHONY: clean
+clean:
+	@echo "\tRM\t$(OBJS) $(TARGET)"
+	@rm $(OBJS) $(TARGET)

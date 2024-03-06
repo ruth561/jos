@@ -8,3 +8,7 @@ qemu:
 	@mkdir -p boot/fs/EFI/BOOT
 	@cp boot/boot.efi boot/fs/EFI/BOOT/BOOTX64.EFI
 	qemu-system-x86_64 $(QEMU_ARGS)
+
+.PHONY: clean
+clean:
+	@$(MAKE) $@ -C boot
