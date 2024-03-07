@@ -4,6 +4,9 @@
 # Compiled Object files
 *.o
 
+# ELF files
+*.elf
+
 # Efi Applications
 *.efi
 
@@ -12,3 +15,5 @@ boot/fs
 
 # misc
 .clangd
+.gdbinit
+qemufs

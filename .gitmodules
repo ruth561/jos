@@ -1,0 +1,3 @@
+[submodule "josloader"]
+	path = josloader
+	url = https://github.com/ruth561/josloader.git

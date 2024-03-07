@@ -3,5 +3,5 @@
 # Dependencies
 
 ```
-sudo apt install mingw-w64 ovmf
+sudo apt install ovmf
 ```
