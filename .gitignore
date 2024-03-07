@@ -13,7 +13,12 @@
 # File System for QEMU
 boot/fs
 
+# Link Map Files
+*.map
+
 # misc
 .clangd
 .gdbinit
 qemufs
+arch/x86/boot/kernel
+
