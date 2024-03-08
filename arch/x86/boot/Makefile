@@ -24,7 +24,7 @@ $(KERNEL_IMAGE): $(KERNEL_ELF_IMAGE)
 	objcopy -O binary -R .note -R .comment -S $< $@
 
 $(KERNEL_ELF_IMAGE): $(OBJS) $(LINKER_SCRIPT)
-	$(LD) $(LDFLAGS) $(OBJS) -T$(LINKER_SCRIPT) -o $@
+	$(LD) -g $(LDFLAGS) $(OBJS) -T$(LINKER_SCRIPT) -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<

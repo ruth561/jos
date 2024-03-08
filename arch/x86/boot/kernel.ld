@@ -18,7 +18,7 @@ SECTIONS {
 
         .rodata : {
                 __rodata_start = .;
-                *(.rodata)
+                *(.rodata*)
                 __rodata_end = .;
         }
 
@@ -26,6 +26,16 @@ SECTIONS {
                 __data_start = .;
                 *(.data)
                 __data_end = .;
+        }
+
+        .bss    : {
+                __bss_start = .;
+                *(.bss)
+                __bss_end = .;
+        }
+
+        .debug  : {
+                *(.debug*)
         }
         
 }

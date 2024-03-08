@@ -36,12 +36,15 @@ clean:
 	@$(MAKE) clean -C kernel
 	@$(MAKE) clean -C arch/$(ARCH)/boot
 
+.PHONY: $(KERNEL_IMAGE)
 $(KERNEL_IMAGE):
 	@$(MAKE) -C kernel
 
+.PHONY: $(KERNEL_BOOT_IMAGE)
 $(KERNEL_BOOT_IMAGE):
 	@$(MAKE) -C arch/$(ARCH)/boot
 
+.PHONY: $(BOOTLOADER)
 $(BOOTLOADER):
 	@cd josloader; cargo build --target x86_64-unknown-uefi
 
