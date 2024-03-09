@@ -30,6 +30,10 @@ void startup(struct GopInfo *gop_info) {
         serial_init();
 
         clear_screen(&Green);
+        for (int i = 0; i < 200; i++) {
+                write_pixel(i, i, &Red);
+                write_pixel(i, 2 * i, &Red);
+        }
 
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {

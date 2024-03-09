@@ -1,5 +1,7 @@
 #pragma once
 
+#include "type.h"
+
 
 enum PixelFormat {
         kRgb,
@@ -8,8 +10,8 @@ enum PixelFormat {
 
 struct GopInfo {
         void *frame_buffer;
-        unsigned long long width;
-        unsigned long long height;
-        unsigned long long stride;
+        u64 width;
+        u64 height;
+        u64 stride;
         enum PixelFormat pixel_format;
 };

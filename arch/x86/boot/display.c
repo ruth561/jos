@@ -13,26 +13,51 @@ void display_init(struct GopInfo *gop_info_)
         gop_info.pixel_format = gop_info_->pixel_format;
 }
 
-void clear_screen(struct PixelColor *color)
+// color to int
+// PixecColorの値をもとに、実際にフレームバッファに書き込む値に変換する関数。
+static u32 c2i(struct PixelColor *color)
 {
-        u32 *frame_buffer_base = gop_info.frame_buffer;
-        u32 pixel;
-        
+        u32 ret = 0xFFFFFF;
         switch (gop_info.pixel_format) {
                 case kRgb:
-                        pixel = color->r | (color->g << 8) | (color->b << 16);
+                        ret = color->r | (color->g << 8) | (color->b << 16);
                         break;
                 case kBgr:
-                        pixel = color->b | (color->g << 8) | (color->r << 16);
+                        ret = color->b | (color->g << 8) | (color->r << 16);
                         break;
                 default:
                         // TODO: error
                         break;
         }
+        return ret;
+}
+
+// 書き込む位置がフレームバッファからはみ出ていないかをチェックせずに書き込む関数。
+//      - x: 上からの位置
+//      - y: 左からの位置
+void inline write_pixel_uncheck(u32 x, u32 y, u32 pixel)
+{
+        *(u32 *) ((u32 *) gop_info.frame_buffer + x * gop_info.stride + y) = pixel;
+}
+
+void write_pixel(u32 x, u32 y, struct PixelColor *color)
+{
+        u32 pixel = c2i(color);
+
+        if (x < gop_info.height && y < gop_info.width) {
+                write_pixel_uncheck(x, y, pixel);
+        } else {
+                // TODO: error
+        }
+}
+
+void clear_screen(struct PixelColor *color)
+{
+        u32 pixel = c2i(color);
 
         for (int i = 0; i < gop_info.height; i++) {
                 for (int j = 0; j < gop_info.width; j++) {
-                        *(u32 *) (frame_buffer_base + i * gop_info.stride + j) = pixel;
+                        write_pixel_uncheck(i, j, pixel);
                 }
         }
 }
