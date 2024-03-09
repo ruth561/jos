@@ -1,45 +1,48 @@
 #include "asm/cpu.h"
 #include "boot.h"
 #include "serial.h"
+#include "display.h"
 
-const char *text = "Hello from startup.c!";
 
-void clear_screen(struct GopInfo *gop_info, unsigned int color)
-{
-        unsigned int *frame_buffer_base = gop_info->frame_buffer;
-        for (int i = 0; i < gop_info->height; i++) {
-                for (int j = 0; j < gop_info->width; j++) {
-                        unsigned int *pixel = frame_buffer_base + i * gop_info->stride + j;
-                        *pixel = color;
-                }
-        }
-}
+struct PixelColor Red = {
+        .r = 0xFF,
+        .g = 0,
+        .b = 0,
+};
 
-#define RED     0xFF0000
-#define GREEN   0x00FF00
-#define BLUE    0x0000FF
+struct PixelColor Green = {
+        .r = 0,
+        .g = 0xFF,
+        .b = 0,
+};
+
+struct PixelColor Blue = {
+        .r = 0,
+        .g = 0,
+        .b = 0xFF,
+};
 
 __attribute__((section(".stext")))
 void startup(struct GopInfo *gop_info) {
 
-        clear_screen(gop_info, RED);
+        display_init(gop_info);
 
         serial_init();
 
-        clear_screen(gop_info, GREEN);
+        clear_screen(&Green);
 
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {
                 char c = recvb(global_serial_port);
                 switch (c) {
                         case 'r':
-                                clear_screen(gop_info, RED);
+                                clear_screen(&Red);
                                 break;
                         case 'b':
-                                clear_screen(gop_info, BLUE);
+                                clear_screen(&Blue);
                                 break;
                         case 'g':
-                                clear_screen(gop_info, GREEN);
+                                clear_screen(&Green);
                                 break;
                         default:
                                 sendb(global_serial_port, 'x');
