@@ -51,12 +51,32 @@ void write_pixel(u32 x, u32 y, struct PixelColor *color)
         }
 }
 
+void write_rectangle(u32 x, u32 y, u32 h, u32 w, struct PixelColor *color)
+{
+        u32 pixel = c2i(color);
+
+        if (x + h < gop_info.height && y + w < gop_info.width) {
+                for (u32 i = x; i < x + h; i++) {
+                        for (u32 j = y; j < y + w; j++) {
+                                write_pixel_uncheck(i, j, pixel);
+                        }
+                }
+        } else {
+                // TODO: error
+        }
+}
+
+void write_square(u32 x, u32 y, u32 size, struct PixelColor *color)
+{
+        write_rectangle(x, y, size, size, color);
+}
+
 void clear_screen(struct PixelColor *color)
 {
         u32 pixel = c2i(color);
 
-        for (int i = 0; i < gop_info.height; i++) {
-                for (int j = 0; j < gop_info.width; j++) {
+        for (u32 i = 0; i < gop_info.height; i++) {
+                for (u32 j = 0; j < gop_info.width; j++) {
                         write_pixel_uncheck(i, j, pixel);
                 }
         }
