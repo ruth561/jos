@@ -12,7 +12,8 @@ QEMU_ROOTFS = qemufs
 QEMU_ARGS = -m 4G
 QEMU_ARGS += -bios /usr/share/ovmf/OVMF.fd
 QEMU_ARGS += -drive file=fat:rw:$(QEMU_ROOTFS),media=disk,format=raw
-QEMU_ARGS += -monitor stdio
+# QEMU_ARGS += -monitor stdio
+QEMU_ARGS += -serial stdio
 QEMU_ARGS += -s
 
 PWD = $(shell pwd)

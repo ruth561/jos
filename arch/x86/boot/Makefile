@@ -6,7 +6,7 @@ KERNEL_ELF_IMAGE = kernel.elf
 # ロードされる。
 KERNEL_IMAGE = kernel
 # KERNEL_ELF_IMAGEを作るのに必要なオブジェクトファイルたち
-OBJS = startup.o
+OBJS = startup.o serial.o
 # KERNEL_ELF_IMAGEをリンクするときに使うリンカスクリプト
 LINKER_SCRIPT = kernel.ld
 
@@ -21,13 +21,16 @@ LDFLAGS  = -Tkernel.ld -Map=kernel.map
 all: $(KERNEL_IMAGE)
 
 $(KERNEL_IMAGE): $(KERNEL_ELF_IMAGE)
-	objcopy -O binary -R .note -R .comment -S $< $@
+	@echo "\tOBJCOPY\t$@"
+	@objcopy -O binary -R .note -R .comment -S $< $@
 
 $(KERNEL_ELF_IMAGE): $(OBJS) $(LINKER_SCRIPT)
-	$(LD) -g $(LDFLAGS) $(OBJS) -T$(LINKER_SCRIPT) -o $@
+	@echo "\tLD\t$@"
+	@$(LD) -g $(LDFLAGS) $(OBJS) -T$(LINKER_SCRIPT) -o $@
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	@echo "\tCC\t$@"
+	@$(CC) $(CFLAGS) -c $<
 
 .PHONY: clean
 clean:
