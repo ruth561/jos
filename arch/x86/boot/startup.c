@@ -1,5 +1,6 @@
 #include "asm/cpu.h"
 #include "boot.h"
+#include "console.h"
 #include "serial.h"
 #include "display.h"
 
@@ -38,6 +39,20 @@ __attribute__((section(".stext")))
 void startup(struct GopInfo *gop_info) {
 
         display_init(gop_info);
+        display_console_init(gop_info, &Black, &White);
+        printd("Hello, World!\n");
+        printd("I'm TAKUMI.\n");
+        printd("Nice to meet you~\n");
+        int n = printd("##################################################################################################################################################################################################################################################################################");
+        
+        for (int i = 0; i < 100; i++) {
+                for (int j = 0; j < i; j++) {
+                        printd("A");
+                }
+                printd("\n");
+        }
+        
+        while (1);
 
         serial_init();
 
