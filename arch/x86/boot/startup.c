@@ -22,6 +22,18 @@ struct PixelColor Blue = {
         .b = 0xFF,
 };
 
+struct PixelColor White = {
+        .r = 0xFF,
+        .g = 0xFF,
+        .b = 0xFF,
+};
+
+struct PixelColor Black = {
+        .r = 0,
+        .g = 0,
+        .b = 0,
+};
+
 __attribute__((section(".stext")))
 void startup(struct GopInfo *gop_info) {
 
@@ -40,6 +52,10 @@ void startup(struct GopInfo *gop_info) {
         write_square(200, 300, 400, &Red);
 
         write_char(100, 100, 'B', &Red, &Green);
+        write_string(200, 50, "Hello, World!", 14, &Red, &Green);
+        write_string(0, 0,
+                " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+                96, &Black, &White);
 
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {

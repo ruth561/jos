@@ -52,7 +52,7 @@ void write_pixel(u32 x, u32 y, struct PixelColor *color)
         }
 }
 
-void write_char(u32 x, u32 y, char c, struct PixelColor *fg, struct PixelColor *bg)
+int write_char(u32 x, u32 y, char c, struct PixelColor *fg, struct PixelColor *bg)
 {
         u32 fg_pixel = c2i(fg);
         u32 bg_pixel = c2i(bg);
@@ -60,12 +60,12 @@ void write_char(u32 x, u32 y, char c, struct PixelColor *fg, struct PixelColor *
 
         if (!PRINTABLE(idx)) {
                 // TODO: error
-                return;
+                return -1;
         }
 
         if (x + FONT_HEIGHT >= gop_info.height && y + FONT_WIDTH >= gop_info.width) {
                 // TODO: error
-                return;
+                return -1;
         }
         
         for (u32 dx = 0; dx < FONT_HEIGHT; dx++) {
@@ -79,6 +79,20 @@ void write_char(u32 x, u32 y, char c, struct PixelColor *fg, struct PixelColor *
                         write_pixel_uncheck(x + dx, y + dy, pixel);
                 }
         }
+        return 0;
+}
+
+int write_string(u32 x, u32 y, const char *s, usize len,
+                  struct PixelColor *fg, struct PixelColor *bg)
+{
+        for (usize i = 0; i < len; i++) {
+                int error = write_char(x, y + i * FONT_WIDTH, s[i], fg, bg);
+                if (error) {
+                        // TODO: error
+                        return error;
+                }
+        }
+        return 0;
 }
 
 void write_rectangle(u32 x, u32 y, u32 h, u32 w, struct PixelColor *color)
