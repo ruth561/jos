@@ -13,4 +13,6 @@ void display_console_init(struct GopInfo *gop_info, struct PixelColor *fg,
 // 置き換えしたりせず、書き込みを終了する。
 //      - s: 書き込む文字列へのポインタ
 //      - 返り値: 書き込んだ文字数
-usize printd(const char *s);
+usize put_string_to_display(const char *s);
+
+#define printd(s, ...) put_string_to_display(format_string(s, __VA_ARGS__))

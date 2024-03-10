@@ -4,6 +4,7 @@
 #include "serial.h"
 #include "display.h"
 #include "type.h"
+#include "string.h"
 
 
 struct PixelColor Red = {
@@ -41,20 +42,19 @@ void startup(struct GopInfo *gop_info) {
 
         display_init(gop_info);
         display_console_init(gop_info, &Black, &White);
-        printd("Hello, World!\n");
-        printd("I'm TAKUMI.\n");
-        printd("Nice to meet you~\n");
 
-        u32 cnt = 0;
-        while (1) {
-                u32 n = cnt % 200;
-                while (n--) {
-                        printd("A");
-                }
-                printd("\n");
-                cnt++;
-        }
+        put_string_to_display("Hello, World!\n");
+        put_string_to_display("I'm TAKUMI.\n");
+        put_string_to_display("Nice to meet you~\n");
 
+        printd("gop_info.frame_buffer: 0x%lx\n", (u64) gop_info->frame_buffer);
+        printd("gop_info.height: 0x%x\n", gop_info->height);
+        printd("gop_info.width: 0x%x\n", gop_info->width);
+        printd("gop_info.stride: 0x%x\n", gop_info->stride);
+
+        printd("%lx, %lx, %lx\n", 0, 1, 2);
+        printd("%x %x\n", 0xdeadbeef, 0xcafebabe);
+        
         while (1);
 
         serial_init();

@@ -2,7 +2,7 @@
 #include "boot.h"
 #include "font.h"
 #include "type.h"
-#include "utils.h"
+#include "string.h"
 
 
 static struct GopInfo gop_info;

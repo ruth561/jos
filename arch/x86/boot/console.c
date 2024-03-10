@@ -65,7 +65,7 @@ static int display_console_putchar(char c)
         return 0;
 }
 
-usize printd(const char *s)
+usize put_string_to_display(const char *s)
 {
         usize cnt = 0;
 

@@ -11,3 +11,6 @@ typedef long long s64;
 typedef unsigned long long u64;
 typedef u64 usize;
 typedef s64 ssize;
+
+#define true 1
+#define false 0
