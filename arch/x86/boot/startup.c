@@ -52,28 +52,7 @@ void startup(struct GopInfo *gop_info) {
         printd("gop_info.width: 0x%x\n", gop_info->width);
         printd("gop_info.stride: 0x%x\n", gop_info->stride);
 
-        printd("%lx, %lx, %lx\n", 0, 1, 2);
-        printd("%x %x\n", 0xdeadbeef, 0xcafebabe);
-        
-        while (1);
-
         serial_init();
-
-        clear_screen(&Green);
-        for (int i = 0; i < 200; i++) {
-                write_pixel(i, i, &Red);
-                write_pixel(i, 2 * i, &Red);
-        }
-
-        write_rectangle(100, 100, 200, 300, &Blue);
-        write_rectangle(600, 600, 1000, 1000, &Blue); // これは描画されない
-        write_square(200, 300, 400, &Red);
-
-        write_char(100, 100, 'B', &Red, &Green);
-        write_string(200, 50, "Hello, World!", 14, &Red, &Green);
-        write_string(0, 0,
-                " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-                96, &Black, &White);
 
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {
