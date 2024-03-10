@@ -1,5 +1,6 @@
 #include "asm/cpu.h"
 #include "asm/io.h"
+#include "console.h"
 
 
 #define COM1_PORT 0x3F8
@@ -62,6 +63,7 @@ static void set_line_protocol(io_addr_t port, unsigned char lctl) {
 // portの初期化を行う関数
 //      - port: ポートのI/Oアドレス空間のベースアドレス
 int init_port(io_addr_t port) {
+        printd("[ init_port ] port: %hx\n", port);
         // 割り込みをすべて禁止にする
         IoOut8(port + SERIAL_REG_INT_ENABLE, 0x00);
         set_baud_rate(port, 1);
@@ -73,7 +75,9 @@ int init_port(io_addr_t port) {
         IoOut8(port + 0, 0xAE);    // Test serial chip (send byte 0xAE and check if serial returns same byte)
 
         // Check if serial is faulty (i.e: not same byte as sent)
-        if(IoIn8(port + 0) != 0xAE) {
+        u8 val = IoIn8(port + 0);
+        printd("val: %hhx\n", val);
+        if(val != 0xAE) {
                 return 1;
         }
 
@@ -88,7 +92,7 @@ static int is_transmit_empty(io_addr_t port) {
 }
 
 // 1-byteのデータを送信する
-void sendb(io_addr_t port, char data) {
+void sendb(io_addr_t port, u8 data) {
         while (!is_transmit_empty(port));
         IoOut8(port + SERIAL_REG_DATA, data);
 }
@@ -98,12 +102,13 @@ static int is_recv_ready(io_addr_t port) {
 }
 
 // 1-byteのデータを受信する
-char recvb(io_addr_t port) {
+u8 recvb(io_addr_t port) {
         while (!is_recv_ready(port));
         return IoIn8(port + SERIAL_REG_DATA);
 }
 
 io_addr_t serial_init() {
+        printd("[ serial_init ]\n");
         if (!init_port(COM1_PORT)) {
                 global_serial_port = COM1_PORT;
         }

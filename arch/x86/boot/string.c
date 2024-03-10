@@ -26,6 +26,46 @@ static int match_prefix(const char *s, const char *prefix)
         return true;
 }
 
+// 符号なし8-bit整数を解析して文字列に変換する
+//      - buf: 書き込むバッファの先頭ポインタ
+//      - limit: 書き込み文字数の上限
+//      - val: 解析する値
+//      - 返り値: 書き込んだ数
+static usize parse_hhx(char *buf, usize limit, u8 val)
+{
+        int i = 0;
+        for (; i < 2 && i < limit; i++) {
+                char digit = (val >> (4 * (1 - i))) & 0xF;
+                if (digit < 10) {
+                        *buf++ = '0' + digit;
+                } else {
+                        // 0xA <= digit <= 0xF
+                        *buf++ = 'a' + digit - 10;
+                }
+        }
+        return i;
+}
+
+// 符号なし16-bit整数を解析して文字列に変換する
+//      - buf: 書き込むバッファの先頭ポインタ
+//      - limit: 書き込み文字数の上限
+//      - val: 解析する値
+//      - 返り値: 書き込んだ数
+static usize parse_hx(char *buf, usize limit, u16 val)
+{
+        int i = 0;
+        for (; i < 4 && i < limit; i++) {
+                char digit = (val >> (4 * (3 - i))) & 0xF;
+                if (digit < 10) {
+                        *buf++ = '0' + digit;
+                } else {
+                        // 0xA <= digit <= 0xF
+                        *buf++ = 'a' + digit - 10;
+                }
+        }
+        return i;
+}
+
 // 符号なし32-bit整数を解析して文字列に変換する
 //      - buf: 書き込むバッファの先頭ポインタ
 //      - limit: 書き込み文字数の上限
@@ -83,6 +123,14 @@ char *format_string(const char *fmt, ...)
                                 fmt += 3;
                                 u64 arg = va_arg(args, u64);
                                 idx += parse_lx(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+                        } else if (match_prefix(fmt, "%hx")) {
+                                fmt += 3;
+                                u16 arg = va_arg(args, u32); // u32じゃないとだめみたい
+                                idx += parse_hx(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+                        } else if (match_prefix(fmt, "%hhx")) {
+                                fmt += 4;
+                                u8 arg = va_arg(args, u32); // u32じゃないとだめみたい
+                                idx += parse_hhx(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
                         } else {
                                 // TODO: error
                                 // unknown format string

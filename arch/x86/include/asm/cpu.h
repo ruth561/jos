@@ -1,10 +1,11 @@
 #pragma once
 
+#include "type.h"
 #include "asm/io.h"
 
 inline void Halt() { asm("hlt"); }
 
-inline void IoOut8(io_addr_t addr, unsigned char value) {
+inline void IoOut8(io_addr_t addr, u8 value) {
         asm volatile (
                 "outb   %0, %w1"
                 :
@@ -12,8 +13,8 @@ inline void IoOut8(io_addr_t addr, unsigned char value) {
         );
 }
 
-inline unsigned char IoIn8(io_addr_t addr) {
-        unsigned char ret;
+inline u8 IoIn8(io_addr_t addr) {
+        u8 ret;
         asm volatile (
                 "inb    %w1, %0"
                 : "=a" (ret)
@@ -22,7 +23,7 @@ inline unsigned char IoIn8(io_addr_t addr) {
         return ret;
 }
 
-inline void IoOut32(io_addr_t addr, unsigned int value) {
+inline void IoOut32(io_addr_t addr, u32 value) {
         asm volatile (
                 "outl   %0, %w1"
                 :
@@ -36,8 +37,8 @@ inline void IoOut32(io_addr_t addr, unsigned int value) {
         );
 }
 
-inline unsigned int IoIn32(io_addr_t addr) {
-        unsigned int ret;
+inline u32 IoIn32(io_addr_t addr) {
+        u32 ret;
         asm volatile (
                 "inl    %w1, %0"
                 : "=a" (ret)
