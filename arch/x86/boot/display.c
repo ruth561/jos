@@ -1,6 +1,8 @@
 #include "display.h"
 #include "boot.h"
 #include "font.h"
+#include "type.h"
+#include "utils.h"
 
 
 static struct GopInfo gop_info;
@@ -122,6 +124,38 @@ void clear_screen(struct PixelColor *color)
         for (u32 i = 0; i < gop_info.height; i++) {
                 for (u32 j = 0; j < gop_info.width; j++) {
                         write_pixel_uncheck(i, j, pixel);
+                }
+        }
+}
+
+void scroll_screen(s32 pixels, struct PixelColor *bg)
+{
+        u32 pixel = c2i(bg);
+
+        if (pixels == 0) {
+                return;
+        }
+        
+        if (pixels < 0) {
+                // TODO: not implemented
+                return;
+        }
+
+        if (pixels >= gop_info.height) {
+                clear_screen(bg);
+                return;
+        }
+
+        // 0 < pixels < gop_info.height 
+        for (u32 x = 0; x < gop_info.height - pixels; x++) {
+                memcpy(gop_info.frame_buffer + 4 * gop_info.stride * x, 
+                       gop_info.frame_buffer + 4 * gop_info.stride * (x + pixels),
+                       4 * gop_info.width);
+        }
+
+        for (u32 x = gop_info.height - pixels; x < gop_info.height; x++) {
+                for (u32 y = 0; y < gop_info.width; y++) {
+                        write_pixel_uncheck(x, y, pixel);
                 }
         }
 }

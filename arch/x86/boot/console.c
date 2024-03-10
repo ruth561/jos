@@ -36,11 +36,20 @@ void display_console_init(struct GopInfo *gop_info, struct PixelColor *fg,
         clear_screen(&display_console.bg);
 }
 
+static void display_console_scroll()
+{
+        scroll_screen(FONT_HEIGHT, &display_console.bg);
+}
+
 static int display_console_putchar(char c)
 {
         if (c == '\n') {
-                display_console.cursor.x++;
                 display_console.cursor.y = 0;
+                display_console.cursor.x++;
+                if (display_console.cursor.x == display_console.height) {
+                        display_console.cursor.x--;
+                        display_console_scroll();
+                }
                 return 0;
         }
 

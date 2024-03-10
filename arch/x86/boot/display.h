@@ -9,8 +9,19 @@ struct PixelColor {
         u8 b;
 };
 
+// 画面の初期化関数。引数にはUEFIのGOP関連のデータ構造を受け取る。
+// GOP関連のデータ構造はUEFIブートローダーとフォーマットを一致させておく必要がある。
 void display_init(struct GopInfo *gop_info_);
+
+// 画面全体をcolorで塗りつぶす関数。
 void clear_screen(struct PixelColor *color);
+
+// 画面のスクロールを行う関数。
+//      - pixels: この引数で指定されたピクセルの数だけスクロールを行う。
+//                pixelsが負の値のときは下方向にスクロールを行い、
+//                正の値のときは上方向にスクロールを行う。
+//      - bg: 新しく出現した部分の色
+void scroll_screen(s32 pixels, struct PixelColor *bg);
 
 // 1つのピクセルをcolorで塗る関数。
 //      - x: 上からの位置

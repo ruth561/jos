@@ -3,6 +3,7 @@
 #include "console.h"
 #include "serial.h"
 #include "display.h"
+#include "type.h"
 
 
 struct PixelColor Red = {
@@ -43,15 +44,17 @@ void startup(struct GopInfo *gop_info) {
         printd("Hello, World!\n");
         printd("I'm TAKUMI.\n");
         printd("Nice to meet you~\n");
-        int n = printd("##################################################################################################################################################################################################################################################################################");
-        
-        for (int i = 0; i < 100; i++) {
-                for (int j = 0; j < i; j++) {
+
+        u32 cnt = 0;
+        while (1) {
+                u32 n = cnt % 200;
+                while (n--) {
                         printd("A");
                 }
                 printd("\n");
+                cnt++;
         }
-        
+
         while (1);
 
         serial_init();
