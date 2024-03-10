@@ -8,10 +8,12 @@ CPPFLAGS += -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti
 LDFLAGS  += --entry kernel_start -z norelro --image-base 0x100000 --static
 
 $(TARGET): $(OBJS)
-	$(LD) $(LDFLAGS)  -o $@ $^
+	@echo "\tLD\t$@"
+	@$(LD) $(LDFLAGS)  -o $@ $^
 
 %.o: %.cpp
-	$(CC) $(CPPFLAGS) -c -o $@ $<
+	@echo "\tCC\t$@"
+	@$(CC) $(CPPFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:

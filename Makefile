@@ -1,5 +1,7 @@
 ARCH = x86
 
+MAKE_ARGS = -s
+
 # ブートローダーはjosloaderによって作成される
 BOOTLOADER = josloader/target/x86_64-unknown-uefi/debug/josloader.efi
 # ブートローダーから実際にメモリにロードされるイメージファイル
@@ -34,16 +36,16 @@ debug:
 
 .PHONY: clean
 clean:
-	@$(MAKE) clean -C kernel
-	@$(MAKE) clean -C arch/$(ARCH)/boot
+	@$(MAKE) $(MAKE_ARGS) clean -C kernel
+	@$(MAKE) $(MAKE_ARGS) clean -C arch/$(ARCH)/boot
 
 .PHONY: $(KERNEL_IMAGE)
 $(KERNEL_IMAGE):
-	@$(MAKE) -C kernel
+	@$(MAKE) $(MAKE_ARGS) -C kernel
 
 .PHONY: $(KERNEL_BOOT_IMAGE)
 $(KERNEL_BOOT_IMAGE):
-	@$(MAKE) -C arch/$(ARCH)/boot
+	@$(MAKE) $(MAKE_ARGS) -C arch/$(ARCH)/boot
 
 .PHONY: $(BOOTLOADER)
 $(BOOTLOADER):
