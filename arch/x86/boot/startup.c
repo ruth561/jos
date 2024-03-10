@@ -39,6 +39,8 @@ void startup(struct GopInfo *gop_info) {
         write_rectangle(600, 600, 1000, 1000, &Blue); // これは描画されない
         write_square(200, 300, 400, &Red);
 
+        write_char(100, 100, 'B', &Red, &Green);
+
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {
                 char c = recvb(global_serial_port);

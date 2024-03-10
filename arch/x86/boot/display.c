@@ -1,5 +1,6 @@
 #include "display.h"
 #include "boot.h"
+#include "font.h"
 
 
 static struct GopInfo gop_info;
@@ -48,6 +49,35 @@ void write_pixel(u32 x, u32 y, struct PixelColor *color)
                 write_pixel_uncheck(x, y, pixel);
         } else {
                 // TODO: error
+        }
+}
+
+void write_char(u32 x, u32 y, char c, struct PixelColor *fg, struct PixelColor *bg)
+{
+        u32 fg_pixel = c2i(fg);
+        u32 bg_pixel = c2i(bg);
+        u8 idx = (u8) c;
+
+        if (!PRINTABLE(idx)) {
+                // TODO: error
+                return;
+        }
+
+        if (x + FONT_HEIGHT >= gop_info.height && y + FONT_WIDTH >= gop_info.width) {
+                // TODO: error
+                return;
+        }
+        
+        for (u32 dx = 0; dx < FONT_HEIGHT; dx++) {
+                for (u32 dy = 0; dy < FONT_WIDTH; dy++) {
+                        u32 pixel;
+                        if ((font8x8[idx][dx] >> dy) & 1) {
+                                pixel = fg_pixel;
+                        } else {
+                                pixel = bg_pixel;
+                        }
+                        write_pixel_uncheck(x + dx, y + dy, pixel);
+                }
         }
 }
 
