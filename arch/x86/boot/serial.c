@@ -62,23 +62,37 @@ static void set_line_protocol(io_addr_t port, unsigned char lctl)
         IoOut8(port + SERIAL_REG_LINE_CONTROL, LCTL_BITS_8N1);
 }
 
+#pragma clang optimize off
+static void busy_loop()
+{
+        for (int i = 0; i < 1000000; i++);
+}
+#pragma clang optimize on
+
 // モデムをループバックモードにして、送受信のテストを行う。
 // テストをパスした場合は0を返し、パスしなかった場合は-1を返す。
 static int loopback_test(io_addr_t port)
 {
         u8 data;
         u8 save_mctl = IoIn8(port + SERIAL_REG_MODEM_CONTROL);
+        printd("save_mctl: 0x%hhx\n", save_mctl);
         IoOut8(port + SERIAL_REG_MODEM_CONTROL, MCTL_LOOPBACK);
 
+        // 書き込んでからすぐに読み出しを行うと、テストに失敗する可能性があるので、
+        // 途中にビジーループを挟むとよい。
         IoOut8(port + SERIAL_REG_DATA, 0xAB);
+        busy_loop();
         data = IoIn8(port + SERIAL_REG_DATA);
+        printd("[ LOOPBACK TEST ] write: 0xAB, read: 0x%hhx\n", data);
         if (data != 0xAB) {
                 IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
                 return -1;
         }
 
         IoOut8(port + SERIAL_REG_DATA, 0x34);
+        busy_loop();
         data = IoIn8(port + SERIAL_REG_DATA);
+        printd("[ LOOPBACK TEST ] write: 0x34, read: 0x%hhx\n", data);
         if (data != 0x34) {
                 IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
                 return -1;
@@ -125,17 +139,7 @@ io_addr_t serial_init() {
         } else {
                 printd("[ ERROR ] failed to init COM2\n");
         }
-        printd("[ DEBUG ] global_serial_port = %hx\n", global_serial_port);
-
-        try_sendb(global_serial_port, 'S');
-        try_sendb(global_serial_port, 'E');
-        try_sendb(global_serial_port, 'E');
-        try_sendb(global_serial_port, ' ');
-        try_sendb(global_serial_port, 'Y');
-        try_sendb(global_serial_port, 'O');
-        try_sendb(global_serial_port, 'U');
-        try_sendb(global_serial_port, '\n');
-
+        printd("[ INFO ] global_serial_port = %hx\n", global_serial_port);
         return global_serial_port;
 }
 
@@ -144,11 +148,10 @@ int try_sendb(io_addr_t port, u8 data)
         u8 thre = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
         if (thre) {
                 IoOut8(port + SERIAL_REG_DATA, data);
-                printd("[ try_sendb ] send data %hhx!\n", data);
+                // printd("[ try_sendb ] send data %hhx!\n", data);
                 return 0;
         } else {
-                printd("[ try_sendb ] cannot send data (0x%hhx) by serial port 0x%hx\n",
-                        data, port);
+                // printd("[ try_sendb ] cannot send data (0x%hhx) by serial port 0x%hx\n", data, port);
                 return -1;
         }
 }
@@ -163,10 +166,10 @@ int try_recvb(io_addr_t port)
         u8 ready = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
         if (ready) {
                 int data = IoIn8(port + SERIAL_REG_DATA);
-                printd("[ try_recvb ] recv data %hhx!\n", data);
+                // printd("[ try_recvb ] recv data %hhx!\n", data);
                 return data;
         } else {
-                printd("[ try_recvb ] cannot recv data by serial port 0x%hx\n", port);
+                // printd("[ try_recvb ] cannot recv data by serial port 0x%hx\n", port);
                 return -1;
         }
 }
