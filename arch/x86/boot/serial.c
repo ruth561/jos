@@ -1,6 +1,7 @@
 #include "asm/cpu.h"
 #include "asm/io.h"
 #include "console.h"
+#include "serial.h"
 
 
 #define COM1_PORT 0x3F8
@@ -31,6 +32,8 @@
 
 #define LCTL_BITS_8N1 (LCTL_BITS_DATA_8 | LCTL_BITS_PARITY_NONE | LCTL_BITS_STOP_1)
 
+// Modem Control Register Bits
+#define MCTL_LOOPBACK   0b00010000
 
 // Line Status Register Bits
 #define LSTATUS_BIT_DR          0 // Data Ready
@@ -44,20 +47,46 @@ io_addr_t global_serial_port;
 // シリアルポートのボーレートを設定する関数。
 //      - port: ポートのI/Oアドレス
 //      - divisor: ボーレートを決める値（115200 / divisorがボーレートになる）
-static void set_baud_rate(io_addr_t port, unsigned short divisor) {
+static void set_baud_rate(io_addr_t port, u16 divisor) {
         // DLAB-bitをセットする。
         IoOut8(port + SERIAL_REG_LINE_CONTROL, 0x80);
         // ボーレートの除数を書き込む。
         IoOut8(port + SERIAL_REG_DIVISOR_LOW, divisor & 0xFF);
         IoOut8(port + SERIAL_REG_DIVISOR_HIGH, (divisor >> 8) & 0xFF);
-        // DLAB-bitをクリアする。
-        IoOut8(port + SERIAL_REG_LINE_CONTROL, 0x80);
 }
 
 // ラインプロトコルをlctlで表された値に設定する関数。
 // lctlに使えるフラグはLCTL_BITS_*マクロで定義されている。
-static void set_line_protocol(io_addr_t port, unsigned char lctl) {
+static void set_line_protocol(io_addr_t port, unsigned char lctl)
+{
         IoOut8(port + SERIAL_REG_LINE_CONTROL, LCTL_BITS_8N1);
+}
+
+// モデムをループバックモードにして、送受信のテストを行う。
+// テストをパスした場合は0を返し、パスしなかった場合は-1を返す。
+static int loopback_test(io_addr_t port)
+{
+        u8 data;
+        u8 save_mctl = IoIn8(port + SERIAL_REG_MODEM_CONTROL);
+        IoOut8(port + SERIAL_REG_MODEM_CONTROL, MCTL_LOOPBACK);
+
+        IoOut8(port + SERIAL_REG_DATA, 0xAB);
+        data = IoIn8(port + SERIAL_REG_DATA);
+        if (data != 0xAB) {
+                IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+                return -1;
+        }
+
+        IoOut8(port + SERIAL_REG_DATA, 0x34);
+        data = IoIn8(port + SERIAL_REG_DATA);
+        if (data != 0x34) {
+                IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+                return -1;
+        }
+
+        // restore
+        IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+        return 0;
 }
 
 // portの初期化を行う関数
@@ -71,66 +100,81 @@ int init_port(io_addr_t port) {
         // TODO: よく分かっていない
         IoOut8(port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
         IoOut8(port + 4, 0x0B);    // IRQs enabled, RTS/DSR set
-        IoOut8(port + 4, 0x1E);    // Set in loopback mode, test the serial chip
-        IoOut8(port + 0, 0xAE);    // Test serial chip (send byte 0xAE and check if serial returns same byte)
 
-        // Check if serial is faulty (i.e: not same byte as sent)
-        u8 val = IoIn8(port + 0);
-        printd("val: %hhx\n", val);
-        if(val != 0xAE) {
-                return 1;
+        int error = loopback_test(port);
+        if (error) {
+                printd("Failed to loopback test (port = 0x%hx)\n", port);
+                return error;
         }
-
-        // If serial is not faulty set it in normal operation mode
-        // (not-loopback with IRQs enabled and OUT#1 and OUT#2 bits enabled)
-        IoOut8(port + 4, 0x0F);
+        printd("Successfully loopback test (port = 0x%hx)\n", port);
         return 0;
-}
-
-static int is_transmit_empty(io_addr_t port) {
-        return IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
-}
-
-// 1-byteのデータを送信する
-void sendb(io_addr_t port, u8 data) {
-        while (!is_transmit_empty(port));
-        IoOut8(port + SERIAL_REG_DATA, data);
-}
-
-static int is_recv_ready(io_addr_t port) {
-        return IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
-}
-
-// 1-byteのデータを受信する
-u8 recvb(io_addr_t port) {
-        while (!is_recv_ready(port));
-        return IoIn8(port + SERIAL_REG_DATA);
 }
 
 io_addr_t serial_init() {
         printd("[ serial_init ]\n");
         if (!init_port(COM1_PORT)) {
+                printd("[ SUCCESS ] init COM1\n");
                 global_serial_port = COM1_PORT;
+        } else {
+                printd("[ ERROR ] failed to init COM1\n");
         }
+
         if (!init_port(COM2_PORT)) {
+                printd("[ SUCCESS ] init COM2\n");
                 global_serial_port = COM2_PORT;
+        } else {
+                printd("[ ERROR ] failed to init COM2\n");
         }
+        printd("[ DEBUG ] global_serial_port = %hx\n", global_serial_port);
 
-        sendb(global_serial_port, 'S');
-        sendb(global_serial_port, 'E');
-        sendb(global_serial_port, 'E');
-        sendb(global_serial_port, ' ');
-        sendb(global_serial_port, 'Y');
-        sendb(global_serial_port, 'O');
-        sendb(global_serial_port, 'U');
-        sendb(global_serial_port, '\n');
-
-        sendb(COM1_PORT, 'H');
-        sendb(COM1_PORT, 'E');
-        sendb(COM1_PORT, 'L');
-        sendb(COM1_PORT, 'L');
-        sendb(COM1_PORT, 'O');
-        sendb(COM1_PORT, '\n');
+        try_sendb(global_serial_port, 'S');
+        try_sendb(global_serial_port, 'E');
+        try_sendb(global_serial_port, 'E');
+        try_sendb(global_serial_port, ' ');
+        try_sendb(global_serial_port, 'Y');
+        try_sendb(global_serial_port, 'O');
+        try_sendb(global_serial_port, 'U');
+        try_sendb(global_serial_port, '\n');
 
         return global_serial_port;
+}
+
+int try_sendb(io_addr_t port, u8 data)
+{
+        u8 thre = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
+        if (thre) {
+                IoOut8(port + SERIAL_REG_DATA, data);
+                printd("[ try_sendb ] send data %hhx!\n", data);
+                return 0;
+        } else {
+                printd("[ try_sendb ] cannot send data (0x%hhx) by serial port 0x%hx\n",
+                        data, port);
+                return -1;
+        }
+}
+
+void sendb(io_addr_t port, u8 data)
+{
+        while (try_sendb(port, data));
+}
+
+int try_recvb(io_addr_t port)
+{
+        u8 ready = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
+        if (ready) {
+                int data = IoIn8(port + SERIAL_REG_DATA);
+                printd("[ try_recvb ] recv data %hhx!\n", data);
+                return data;
+        } else {
+                printd("[ try_recvb ] cannot recv data by serial port 0x%hx\n", port);
+                return -1;
+        }
+}
+
+u8 recvb(io_addr_t port)
+{
+        int ret;
+        while ((ret = try_recvb(port)) < 0);
+        // CHECK(0 <= ret <= 255);
+        return (u8) ret;
 }

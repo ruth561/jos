@@ -54,6 +54,11 @@ void startup(struct GopInfo *gop_info) {
 
         serial_init();
 
+        printd("[ INFO ] finished to initialization!\n");
+
+        for (u8 data = 0x20; data < 0x60; data++) {
+                try_sendb(global_serial_port, data);
+        }
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
         while (1) {
                 char c = recvb(global_serial_port);
@@ -71,6 +76,15 @@ void startup(struct GopInfo *gop_info) {
                                 sendb(global_serial_port, 'x');
                 }
         }
-        
+
+        // while (1) {
+        //         u8 data = try_recvb(global_serial_port);
+        //         if (data != 0) {
+        //                 printd("===== RECV =====\n");
+        //                 printd("      0x%hhx\n");
+        //                 printd("================\n");
+        //         }
+        // }
+
         while (1) Halt();
 }
