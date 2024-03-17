@@ -15,6 +15,7 @@ LD = ld.lld
 CFLAGS = -Wall -g -O1 --target=x86_64-elf
 CFLAGS += -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti
 CFLAGS += $(addprefix -I,$(INCLUDE_PATH))
+CFLAGS += $(CFLAGS_EXPORT)
 LDFLAGS  = -Tkernel.ld -Map=kernel.map
 
 

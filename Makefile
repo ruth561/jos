@@ -22,6 +22,9 @@ PWD = $(shell pwd)
 INCLUDE_PATH = $(PWD)/include $(PWD)/arch/$(ARCH)/include
 export INCLUDE_PATH
 
+CFLAGS_EXPORT = -g -gdwarf-4
+export CFLAGS_EXPORT
+
 .PHONY: qemu
 qemu: $(KERNEL_IMAGE) $(KERNEL_BOOT_IMAGE) $(BOOTLOADER)
 	@mkdir -p $(QEMU_ROOTFS)/EFI/BOOT
