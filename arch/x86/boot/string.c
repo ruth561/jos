@@ -106,6 +106,82 @@ static usize parse_lx(char *buf, usize limit, u64 val)
         return i;
 }
 
+// 符号なし32-bit整数を解析して10進数の文字列に変換する関数
+//      - buf: 書き込むバッファの先頭ポインタ
+//      - limit: 書き込み文字数の上限
+//      - val: 解析する値
+//      - 返り値: 書き込んだ数
+static usize parse_u(char *buf, usize limit, u32 val)
+{
+        int cnt = 0; // 書き込んだ数
+        u32 base = 1000000000u;
+
+        if (limit == 0) {
+                return 0;
+        }
+
+        if (val == 0) {
+                *buf = '0';
+                return 1;
+        }
+
+        // val > 0
+        int mid = 0;
+        while (base && cnt < limit) {
+                u32 digit = (val / base) % 10;
+                base /= 10;
+                if (mid == 0 && digit == 0) {
+                        continue;
+                }
+
+                *buf++ = '0' + digit;
+                cnt++;
+                if (!mid) {
+                        mid = 1;
+                }
+        }
+        return cnt;
+}
+
+// 符号付き32-bit整数を解析して10進数の文字列に変換する関数
+//      - buf: 書き込むバッファの先頭ポインタ
+//      - limit: 書き込み文字数の上限
+//      - val: 解析する値
+//      - 返り値: 書き込んだ数
+//
+// 負の数を扱うために以下のアプローチを取った。
+// 負の場合は先に'-'を先頭につける。
+// valの数値の部分だけを取り出し、それをu32の値として扱って出力する。
+static usize parse_d(char *buf, usize limit, s32 val)
+{
+        int cnt = 0; // 書き込んだ数
+        u32 uval = (u32) val;
+
+        if (limit == 0) {
+                return 0;
+        }
+
+        if (val == 0) {
+                *buf = '0';
+                return 1;
+        }
+
+        if (val < 0) {
+                *buf++ = '-';
+                cnt++;
+                uval = (u32) -val;
+                // 符号付き32-bit整数で表される値の範囲は[−2147483648, 2147483647]
+                // となっており、負の数の方が1つだけ表現できる数が多い。そのため、
+                // 0x80000000の場合に単に-valとすると挙動がおかしくなってしまうので、
+                // ここで例外的に処理を行っている。
+                if (val == 0x80000000) {
+                        uval = 0x80000000;
+                }
+        }
+
+        return parse_u(buf, limit - cnt, uval) + cnt;
+}
+
 // 文字列を埋め込む関数
 //      - buf: 書き込むバッファの先頭ポインタ
 //      - limit: 書き込み文字数の上限
@@ -148,6 +224,14 @@ char *format_string(const char *fmt, ...)
                                 fmt += 4;
                                 u8 arg = va_arg(args, u32); // u32じゃないとだめみたい
                                 idx += parse_hhx(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+                        } else if (match_prefix(fmt, "%u")) { // 符号なし32-bit整数
+                                fmt += 2;
+                                u32 arg = va_arg(args, u32);
+                                idx += parse_u(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+                        } else if (match_prefix(fmt, "%d")) { // 符号付き32-bit整数
+                                fmt += 2;
+                                s32 arg = va_arg(args, s32);
+                                idx += parse_d(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
                         } else if (match_prefix(fmt, "%s")) {
                                 fmt += 2;
                                 const char *arg = va_arg(args, const char *);

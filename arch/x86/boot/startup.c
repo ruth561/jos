@@ -63,6 +63,18 @@ void startup(struct GopInfo *gop_info) {
         FATAL("FATAL!");
         INFO("This is %s message %x", "INFO", 0xdeadbeef);
 
+        DEBUG("format test: 0u -> %u !!!", 0u);
+        DEBUG("format test: 1u -> %u !!!", 1u);
+        DEBUG("format test: 7u -> %u !!!", 7u);
+        DEBUG("format test: 1729u -> %u !!!", 1729u);
+        DEBUG("format test: 4294967295u -> %u !!!", 4294967295u);
+
+        DEBUG("format test: 0 -> %d !!!", 0);
+        DEBUG("format test: -1729 -> %d !!!", -1729);
+        DEBUG("format test: 1105 -> %d !!!", 1105);
+        DEBUG("format test: 2147483647 -> %d !!!", 0x7FFFFFFF);
+        DEBUG("format test: -2147483648  -> %d !!!", 0x80000000);
+
         printd("[ INFO ] finished to initialization!\n");
 
         // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理

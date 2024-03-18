@@ -29,7 +29,7 @@ extern int current_log_level;
 	if (log_level >= current_log_level) {			\
 		prints(head);					\
 		prints(__VA_ARGS__);				\
-		prints(" (%s:0x%x)\n", __FILE__, __LINE__);	\
+		prints(" (%s:%d)\n", __FILE__, __LINE__);	\
 	}
 
 #define DEBUG(...) WRITE_LOG(LOG_LEVEL_DEBUG, "[ DEBUG ] ", __VA_ARGS__)
