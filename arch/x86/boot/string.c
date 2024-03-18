@@ -236,6 +236,9 @@ char *format_string(const char *fmt, ...)
 				fmt += 2;
 				const char *arg = va_arg(args, const char *);
 				idx += parse_s(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+			} else if (match_prefix(fmt, "%%")) {
+				fmt += 2;
+				buf[idx++] = '%';
 			} else {
 				// TODO: error
 				// unknown format string
