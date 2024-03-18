@@ -1,6 +1,7 @@
 #include "asm/cpu.h"
 #include "boot.h"
 #include "console.h"
+#include "panic.h"
 #include "serial.h"
 #include "display.h"
 #include "type.h"
