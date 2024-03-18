@@ -81,6 +81,11 @@ usize put_string_to_display(const char *s)
 	return cnt;
 }
 
+void serial_console_init()
+{
+	// not implemented
+}
+
 void send_string_to_serial(const char *s)
 {
 	while (*s) {
