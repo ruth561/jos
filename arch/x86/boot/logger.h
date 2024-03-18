@@ -25,6 +25,15 @@
 
 extern int current_log_level;
 
+// ログレベルを設定する関数。
+// 返り値には、もとのログレベルが返される。
+inline int set_log_level(int log_level)
+{
+	int retval = current_log_level;
+	current_log_level = log_level;
+	return retval;
+}
+
 #define WRITE_LOG(log_level, head, ...)				\
 	if (log_level >= current_log_level) {			\
 		prints(head);					\
