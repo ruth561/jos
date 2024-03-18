@@ -5,6 +5,7 @@
 #include "display.h"
 #include "type.h"
 #include "string.h"
+#include "logger.h"
 
 
 struct PixelColor Red = {
@@ -53,6 +54,14 @@ void startup(struct GopInfo *gop_info) {
         printd("gop_info.stride: 0x%x\n", gop_info->stride);
 
         serial_init();
+        logger_init(10);
+
+        DEBUG("DEBUG!");
+        INFO("INFO!");
+        WARN("WARN!");
+        ERROR("ERROR!");
+        FATAL("FATAL!");
+        INFO("This is %s message %x", "INFO", 0xdeadbeef);
 
         printd("[ INFO ] finished to initialization!\n");
 

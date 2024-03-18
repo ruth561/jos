@@ -106,6 +106,23 @@ static usize parse_lx(char *buf, usize limit, u64 val)
         return i;
 }
 
+// 文字列を埋め込む関数
+//      - buf: 書き込むバッファの先頭ポインタ
+//      - limit: 書き込み文字数の上限
+//      - s: 埋め込む文字列の先頭へのポインタ
+//      - 返り値: 書き込んだ数
+static usize parse_s(char *buf, usize limit, const char *s)
+{
+        int i = 0;
+        for (; i < limit; i++) {
+                if (*s == '\0') {
+                        break;
+                }
+                *buf++ = *s++;
+        }
+        return i;
+}
+
 char *format_string(const char *fmt, ...)
 {
         static char buf[FORMAT_STRING_BUF_SIZE];
@@ -131,6 +148,10 @@ char *format_string(const char *fmt, ...)
                                 fmt += 4;
                                 u8 arg = va_arg(args, u32); // u32じゃないとだめみたい
                                 idx += parse_hhx(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
+                        } else if (match_prefix(fmt, "%s")) {
+                                fmt += 2;
+                                const char *arg = va_arg(args, const char *);
+                                idx += parse_s(&buf[idx], FORMAT_STRING_BUF_SIZE - 1 - idx, arg);
                         } else {
                                 // TODO: error
                                 // unknown format string

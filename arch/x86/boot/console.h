@@ -3,6 +3,7 @@
 #include "boot.h"
 #include "display.h"
 #include "string.h"
+#include "serial.h"
 
 // ディスプレイコンソールの初期化を行う関数
 // ディスプレイコンソールとは、ディスプレイ上に出力されるコンソールのこと。
@@ -15,4 +16,8 @@ void display_console_init(struct GopInfo *gop_info, struct PixelColor *fg,
 //      - 返り値: 書き込んだ文字数
 usize put_string_to_display(const char *s);
 
-#define printd(s, ...) put_string_to_display(format_string(s, ##__VA_ARGS__))
+#define printd(format, ...) put_string_to_display(format_string(format, ##__VA_ARGS__))
+
+void send_string_to_serial(const char *s);
+
+#define prints(format, ...) send_string_to_serial(format_string(format, ##__VA_ARGS__))
