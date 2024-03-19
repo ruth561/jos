@@ -13,4 +13,5 @@
 		FATAL(__VA_ARGS__);				\
 		prints("++++++++ KERNEL PANIC ++++++++\n");	\
 		while (1) Halt();				\
+		UNREACHABLE();					\
 	} while (0)

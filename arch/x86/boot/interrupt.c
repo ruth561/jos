@@ -5,6 +5,7 @@
 #include "panic.h"
 #include "type.h"
 #include "compiler.h"
+#include "assert.h"
 
 
 #define NR_IDT_ENTRIES	256
@@ -35,7 +36,7 @@ void basic_int_handler(void *frame)
 
 void set_idt_entry(int vector, void *handler)
 {
-	// TODO: CHECK(0 <= vector && vector < NR_IDT_ENTRIES)
+	CHECK(0 <= vector && vector < NR_IDT_ENTRIES);
 	u64 address = (u64) handler;
 
 	struct gate_desc *desc = &idt[vector];
