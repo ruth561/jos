@@ -6,6 +6,7 @@
 #include "type.h"
 #include "compiler.h"
 #include "assert.h"
+#include "utils.h"
 
 
 #define NR_IDT_ENTRIES	256
@@ -26,7 +27,7 @@ struct gate_desc {
 	u32	_2;
 } __attribute__((packed));
 
-alignas(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
+ALIGN(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
 
 __attribute__((interrupt()))
 void basic_int_handler(void *frame)
@@ -37,6 +38,7 @@ void basic_int_handler(void *frame)
 void set_idt_entry(int vector, void *handler)
 {
 	CHECK(0 <= vector && vector < NR_IDT_ENTRIES);
+	CHECK(is_aligned(&idt, 8));
 	u64 address = (u64) handler;
 
 	struct gate_desc *desc = &idt[vector];

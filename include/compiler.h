@@ -4,8 +4,7 @@
 // 定義したヘッダファイル。
 
 
-#define alignas _Alignas
-#define alignof _Alignof
+#define ALIGN(x) __attribute__((aligned(x)))
 
 #define LIKELY(condition) __builtin_expect(!!condition, 1)
 #define UNLIKELY(condition) __builtin_expect(!!condition, 0)
