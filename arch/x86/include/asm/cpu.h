@@ -46,3 +46,21 @@ inline u32 IoIn32(io_addr_t addr) {
         );
         return ret;
 }
+
+// lidt命令を行う関数。lidt命令には、IDTのベースアドレスと
+// そのサイズを指定する必要がある。
+inline void load_idt(u16 size, u64 address)
+{
+        char lidt_val[10];
+        *(u16 *) &lidt_val[0] = size;
+        *(u64 *) &lidt_val[2] = address;
+        asm volatile ("lidt %0" :: "m" (lidt_val));
+}
+
+// 現在のCSレジスタの値を取得する関数。
+inline u16 get_cs()
+{
+        u16 ret;
+        asm volatile ("movw %%cs, %0" : "=a" (ret));
+        return ret;
+}

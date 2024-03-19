@@ -1,6 +1,7 @@
 #include "asm/cpu.h"
 #include "boot.h"
 #include "console.h"
+#include "interrupt.h"
 #include "panic.h"
 #include "serial.h"
 #include "display.h"
@@ -55,6 +56,8 @@ void startup(struct GopInfo *gop_info) {
 	serial_console_init();
 
 	logger_init(LOG_LEVEL_INFO);
+
+	interrupt_init();
 
 
 	INFO("Initialization completed!");

@@ -16,6 +16,7 @@ QEMU_ARGS += -bios /usr/share/ovmf/OVMF.fd
 QEMU_ARGS += -drive file=fat:rw:$(QEMU_ROOTFS),media=disk,format=raw
 # QEMU_ARGS += -monitor stdio
 QEMU_ARGS += -serial stdio
+QEMU_ARGS += -monitor telnet::6666,server,nowait
 QEMU_ARGS += -s
 
 PWD = $(shell pwd)
@@ -25,6 +26,9 @@ export INCLUDE_PATH
 CFLAGS_EXPORT = -g -gdwarf-4
 export CFLAGS_EXPORT
 
+.PHONY: target
+target: $(KERNEL_IMAGE) $(KERNEL_BOOT_IMAGE)
+
 .PHONY: qemu
 qemu: $(KERNEL_IMAGE) $(KERNEL_BOOT_IMAGE) $(BOOTLOADER)
 	@mkdir -p $(QEMU_ROOTFS)/EFI/BOOT
@@ -33,9 +37,12 @@ qemu: $(KERNEL_IMAGE) $(KERNEL_BOOT_IMAGE) $(BOOTLOADER)
 	@echo "\tQEMU"
 	@qemu-system-x86_64 $(QEMU_ARGS)
 
+# QEMUを起動後、GDBとQEMUモニターを新しい端末で開く
 .PHONY: debug
 debug:
-	make qemu & gdb -q
+	make qemu &
+	gnome-terminal -- gdb -q
+	gnome-terminal -- telnet localhost 6666
 
 .PHONY: clean
 clean:
