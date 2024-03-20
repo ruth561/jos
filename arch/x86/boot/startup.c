@@ -3,6 +3,7 @@
 #include "console.h"
 #include "interrupt.h"
 #include "panic.h"
+#include "processor.h"
 #include "serial.h"
 #include "display.h"
 #include "type.h"
@@ -24,6 +25,8 @@ void startup(struct GopInfo *gop_info) {
 
 	serial_init();
 	serial_console_init();
+
+	processor_init();
 
 	logger_init(LOG_LEVEL_INFO);
 
