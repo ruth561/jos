@@ -67,9 +67,28 @@ static void print_regs(struct regs_on_stack *regs)
 		regs->error_code, regs->rflags);
 }
 
+#pragma clang optimize off
+int align_check(void *p, u64 align)
+{
+	u64 addr = (u64) p;
+	if (addr % align) {
+		return false;
+	} else {
+		return true;
+	}
+}
+#pragma clang optimize on
+
 // #DE
 DEFINE_INT_HANDLER(de)
 {
+	// 適切にスタックの16-bytesアラインメントが行われていれば、
+	// ここの検証は通過できるはず。
+#pragma clang optimize off
+	ALIGN(16) int data;
+	CHECK(align_check(&data, 16));
+#pragma clang optimize on
+
 	print_regs(regs);
 	PANIC("Divide Error");
 }
