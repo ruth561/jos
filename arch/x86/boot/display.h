@@ -9,6 +9,12 @@ struct PixelColor {
         u8 b;
 };
 
+extern struct PixelColor Red;
+extern struct PixelColor Green;
+extern struct PixelColor Blue;
+extern struct PixelColor White;
+extern struct PixelColor Black;
+
 // 画面の初期化関数。引数にはUEFIのGOP関連のデータ構造を受け取る。
 // GOP関連のデータ構造はUEFIブートローダーとフォーマットを一致させておく必要がある。
 void display_init(struct GopInfo *gop_info_);

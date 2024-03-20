@@ -7,6 +7,36 @@
 
 static struct GopInfo gop_info;
 
+struct PixelColor Red = {
+	.r = 0xFF,
+	.g = 0,
+	.b = 0,
+};
+
+struct PixelColor Green = {
+	.r = 0,
+	.g = 0xFF,
+	.b = 0,
+};
+
+struct PixelColor Blue = {
+	.r = 0,
+	.g = 0,
+	.b = 0xFF,
+};
+
+struct PixelColor White = {
+	.r = 0xFF,
+	.g = 0xFF,
+	.b = 0xFF,
+};
+
+struct PixelColor Black = {
+	.r = 0,
+	.g = 0,
+	.b = 0,
+};
+
 void display_init(struct GopInfo *gop_info_)
 {
         gop_info.frame_buffer = gop_info_->frame_buffer;

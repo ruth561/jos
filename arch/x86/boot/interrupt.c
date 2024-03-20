@@ -1,6 +1,7 @@
 #include "interrupt.h"
 #include "asm/cpu.h"
 #include "console.h"
+#include "display.h"
 #include "logger.h"
 #include "panic.h"
 #include "type.h"
@@ -55,7 +56,11 @@ ALIGN(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
 #define DEFINE_INT_HANDLER_BASIC(name)				\
 	DEFINE_INT_HANDLER(name)				\
 	{							\
+		ALIGN(16) int data;				\
+		CHECK(align_check(&data, 16));			\
+								\
 		print_regs(regs);				\
+		*(volatile int *) 0xdeadbeefcafebabe = 3;	\
 		PANIC("[!-- EXCEPTION (#" #name ") --!]");	\
 	}
 
@@ -107,15 +112,35 @@ DEFINE_INT_HANDLER_BASIC(OF)	// 4
 DEFINE_INT_HANDLER_BASIC(BR)	// 5
 DEFINE_INT_HANDLER_BASIC(UD)	// 6
 DEFINE_INT_HANDLER_BASIC(NM)	// 7
+
+DEFINE_INT_HANDLER(DF)		// 8
+{
+	print_regs(regs);
+	PANIC("Double Fault");
+}
+
+DEFINE_INT_HANDLER_BASIC(CSO)	// 9
+DEFINE_INT_HANDLER_BASIC(TS)	// 10
+DEFINE_INT_HANDLER_BASIC(NP)	// 11
+DEFINE_INT_HANDLER_BASIC(SS)	// 12
 DEFINE_INT_HANDLER_BASIC(GP)	// 13
 
 DEFINE_INT_HANDLER(PF)		// 14
 {
+	// 適切にスタックの16-bytesアラインメントが行われていれば、
+	// ここの検証は通過できるはず。
+#pragma clang optimize off
+	ALIGN(16) int data;
+	CHECK(align_check(&data, 16));
+#pragma clang optimize on
+
 	print_regs(regs);
 	PANIC("Page Fault");
 }
 
+DEFINE_INT_HANDLER_BASIC(RSVD)	// 15
 DEFINE_INT_HANDLER_BASIC(MF)	// 16
+DEFINE_INT_HANDLER_BASIC(AC)	// 17
 DEFINE_INT_HANDLER_BASIC(MC)	// 18
 DEFINE_INT_HANDLER_BASIC(XM)	// 19
 DEFINE_INT_HANDLER_BASIC(VE)	// 20
@@ -129,16 +154,16 @@ static void *int_handlers[] = {
 	&INT_HANDLER(BR),
 	&INT_HANDLER(UD),
 	&INT_HANDLER(NM),
-	(void *) 0,
-	(void *) 0,
-	(void *) 0,
-	(void *) 0,
-	(void *) 0,
+	&INT_HANDLER(DF),
+	&INT_HANDLER(CSO),
+	&INT_HANDLER(TS),
+	&INT_HANDLER(NP),
+	&INT_HANDLER(SS),
 	&INT_HANDLER(GP),
 	&INT_HANDLER(PF),
-	(void *) 0,
+	&INT_HANDLER(RSVD),
 	&INT_HANDLER(MF),
-	(void *) 0,
+	&INT_HANDLER(AC),
 	&INT_HANDLER(MC),
 	&INT_HANDLER(XM),
 	&INT_HANDLER(VE),

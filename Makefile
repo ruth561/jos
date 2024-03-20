@@ -65,3 +65,9 @@ $(BOOTLOADER):
 test:
 	@echo $(PWD)
 	@echo $(INCLUDE_PATH)
+
+# USBストレージに書き込む
+.PHONY: write_usb
+write_usb:
+	rm /media/ruth/UEFI\ TEST/kernel.elf
+	cp qemufs/kernel.elf /media/ruth/UEFI\ TEST/
