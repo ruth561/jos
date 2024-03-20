@@ -7,6 +7,6 @@
 
 
 #define CHECK(condition)		\
-	if (UNLIKELY(!condition)) {	\
+	if (UNLIKELY(!(condition))) {	\
 		PANIC("CHECK failed.");	\
 	}
