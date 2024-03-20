@@ -7,7 +7,7 @@ KERNEL_ELF_IMAGE	= kernel.elf
 KERNEL_IMAGE = kernel
 # KERNEL_ELF_IMAGEを作るのに必要なオブジェクトファイルたち
 OBJS	= startup.o serial.o display.o font.o console.o string.o logger.o
-OBJS	+= interrupt.o
+OBJS	+= interrupt.o interrupt_handler.o
 # KERNEL_ELF_IMAGEをリンクするときに使うリンカスクリプト
 LINKER_SCRIPT = kernel.ld
 
@@ -32,6 +32,10 @@ $(KERNEL_ELF_IMAGE): $(OBJS) $(LINKER_SCRIPT)
 
 %.o: %.c
 	@echo "\tCC\t$@"
+	@$(CC) $(CFLAGS) -c $<
+
+%.o: %.S
+	@echo "\tAS\t$@"
 	@$(CC) $(CFLAGS) -c $<
 
 .PHONY: clean
