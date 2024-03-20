@@ -44,7 +44,9 @@ name##_int_handler:				NL \
 	pushq	%rbx				NL \
 	pushq	%rax				NL \
 	movq	%rsp, %rdi			NL \
+	subq	$8, %rsp			NL \
 	call	do_##name##_int_handler		NL \
+	addq	$8, %rsp			NL \
 	popq	%rax				NL \
 	popq	%rbx				NL \
 	popq	%rcx				NL \
