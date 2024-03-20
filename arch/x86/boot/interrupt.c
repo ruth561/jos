@@ -51,6 +51,14 @@ ALIGN(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
 	void name##_int_handler();					\
 	void do_##name##_int_handler(struct regs_on_stack *regs)
 
+// カーネルパニックを引き起こすハンドラの基本実装。
+#define DEFINE_INT_HANDLER_BASIC(name)				\
+	DEFINE_INT_HANDLER(name)				\
+	{							\
+		print_regs(regs);				\
+		PANIC("[!-- EXCEPTION (#" #name ") --!]");	\
+	}
+
 static void print_regs(struct regs_on_stack *regs)
 {
 	FATAL("%%rax = 0x%lx, %%rbx = 0x%lx, %%rcx = 0x%lx, %%rcx = 0x%lx",
@@ -79,8 +87,7 @@ int align_check(void *p, u64 align)
 }
 #pragma clang optimize on
 
-// #DE
-DEFINE_INT_HANDLER(de)
+DEFINE_INT_HANDLER(DE)	// 0
 {
 	// 適切にスタックの16-bytesアラインメントが行われていれば、
 	// ここの検証は通過できるはず。
@@ -93,10 +100,46 @@ DEFINE_INT_HANDLER(de)
 	PANIC("Divide Error");
 }
 
+DEFINE_INT_HANDLER_BASIC(DB)	// 1
+DEFINE_INT_HANDLER_BASIC(NMI)	// 2
+DEFINE_INT_HANDLER_BASIC(BP)	// 3
+DEFINE_INT_HANDLER_BASIC(OF)	// 4
+DEFINE_INT_HANDLER_BASIC(BR)	// 5
+DEFINE_INT_HANDLER_BASIC(UD)	// 6
+DEFINE_INT_HANDLER_BASIC(NM)	// 7
+DEFINE_INT_HANDLER_BASIC(MF)	// 16
+DEFINE_INT_HANDLER_BASIC(MC)	// 18
+DEFINE_INT_HANDLER_BASIC(XM)	// 19
+DEFINE_INT_HANDLER_BASIC(VE)	// 20
+
+static void *int_handlers[] = {
+	&INT_HANDLER(DE),
+	&INT_HANDLER(DB),
+	&INT_HANDLER(NMI),
+	&INT_HANDLER(BP),
+	&INT_HANDLER(OF),
+	&INT_HANDLER(BR),
+	&INT_HANDLER(UD),
+	&INT_HANDLER(NM),
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	(void *) 0,
+	&INT_HANDLER(MF),
+	(void *) 0,
+	&INT_HANDLER(MC),
+	&INT_HANDLER(XM),
+	&INT_HANDLER(VE),
+};
+
 void set_idt_entry(int vector, void *handler)
 {
 	CHECK(0 <= vector && vector < NR_IDT_ENTRIES);
-	CHECK(is_aligned(&idt, 8));
+
 	u64 address = (u64) handler;
 
 	struct gate_desc *desc = &idt[vector];
@@ -117,8 +160,14 @@ void interrupt_init()
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);
 	DEBUG("interrupt_init");
 
-	set_idt_entry(0, &INT_HANDLER(de));
+	// IDTの設定
+	int vector = 0;
+	for (; vector < (sizeof(int_handlers) / sizeof(void *)); vector++) {
+		set_idt_entry(vector, int_handlers[vector]);
+	}
+	INFO("Registered %d interrupt handler", vector);
 	
+	// IDTRレジスタにIDTを登録
 	u16 size = NR_IDT_ENTRIES * sizeof(struct gate_desc);
 	u64 address = (u64) idt;
 	DEBUG("lidt.size = 0x%hx", size);
@@ -126,14 +175,7 @@ void interrupt_init()
 	load_idt(size, address);
 	
 	set_log_level(log_level);
-
 	INFO("Interrupt initialization completed.");
 
-	// ゼロ除算を行う
-	asm volatile (
-		"movq $-1, %rdx\n\t"
-		"movl $0, %eax\n\t"
-    		"movl $1, %ecx\n\t"
-		"divl %ecx"
-	);
+	X86_INT3();
 }
