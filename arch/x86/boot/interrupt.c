@@ -107,6 +107,14 @@ DEFINE_INT_HANDLER_BASIC(OF)	// 4
 DEFINE_INT_HANDLER_BASIC(BR)	// 5
 DEFINE_INT_HANDLER_BASIC(UD)	// 6
 DEFINE_INT_HANDLER_BASIC(NM)	// 7
+DEFINE_INT_HANDLER_BASIC(GP)	// 13
+
+DEFINE_INT_HANDLER(PF)		// 14
+{
+	print_regs(regs);
+	PANIC("Page Fault");
+}
+
 DEFINE_INT_HANDLER_BASIC(MF)	// 16
 DEFINE_INT_HANDLER_BASIC(MC)	// 18
 DEFINE_INT_HANDLER_BASIC(XM)	// 19
@@ -126,8 +134,8 @@ static void *int_handlers[] = {
 	(void *) 0,
 	(void *) 0,
 	(void *) 0,
-	(void *) 0,
-	(void *) 0,
+	&INT_HANDLER(GP),
+	&INT_HANDLER(PF),
 	(void *) 0,
 	&INT_HANDLER(MF),
 	(void *) 0,
@@ -177,5 +185,6 @@ void interrupt_init()
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
 
-	X86_INT3();
+	*(volatile int *) 0xfffffffffffffff0= 3; // PF?
+	*(volatile int *) 0xdeadbeefcafebabe = 3; // GP
 }

@@ -64,3 +64,47 @@ name##_int_handler:				NL \
 	popq	%r15				NL \
 	addq	$8, %rsp			NL \
 	iretq
+
+// エラーコードを受け取るハンドラの実装。
+// 実装は関数の最初に0xE22C0DEという値をスタックに
+// プッシュするか、の違いしかない。
+#define DEFINE_INT_HANDLER_WITH_ERR_CODE(name)	NL \
+	.text					NL \
+	.global name##_int_handler		NL \
+name##_int_handler:				NL \
+	pushq	%r15				NL \
+	pushq	%r14				NL \
+	pushq	%r13				NL \
+	pushq	%r12				NL \
+	pushq	%r11				NL \
+	pushq	%r10				NL \
+	pushq	%r9				NL \
+	pushq	%r8				NL \
+	pushq	%rbp				NL \
+	pushq	%rsi				NL \
+	pushq	%rdi				NL \
+	pushq	%rdx				NL \
+	pushq	%rcx				NL \
+	pushq	%rbx				NL \
+	pushq	%rax				NL \
+	movq	%rsp, %rdi			NL \
+	subq	$8, %rsp			NL \
+	call	do_##name##_int_handler		NL \
+	addq	$8, %rsp			NL \
+	popq	%rax				NL \
+	popq	%rbx				NL \
+	popq	%rcx				NL \
+	popq	%rdx				NL \
+	popq	%rdi				NL \
+	popq	%rsi				NL \
+	popq	%rbp				NL \
+	popq	%r8 				NL \
+	popq	%r9 				NL \
+	popq	%r10				NL \
+	popq	%r11				NL \
+	popq	%r12				NL \
+	popq	%r13				NL \
+	popq	%r14				NL \
+	popq	%r15				NL \
+	addq	$8, %rsp			NL \
+	iretq
