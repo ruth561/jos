@@ -11,7 +11,7 @@
 #define PANIC(...)						\
 	do {							\
 		FATAL(__VA_ARGS__);				\
-		prints("++++++++ KERNEL PANIC ++++++++\n");	\
+		prints("++++++++ KERNEL PANIC ++++++++\r\n");	\
 		while (1) Halt();				\
 		UNREACHABLE();					\
 	} while (0)

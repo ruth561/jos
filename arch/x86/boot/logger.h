@@ -38,7 +38,7 @@ inline int set_log_level(int log_level)
 	if (log_level >= current_log_level) {			\
 		prints(head);					\
 		prints(__VA_ARGS__);				\
-		prints(" (%s:%d)\n", __FILE__, __LINE__);	\
+		prints(" (%s:%d)\r\n", __FILE__, __LINE__);	\
 	}
 
 #define DEBUG(...) WRITE_LOG(LOG_LEVEL_DEBUG, "[ DEBUG ] ", __VA_ARGS__)
