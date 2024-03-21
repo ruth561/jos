@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include "asm/cpu.h"
+#include "compiler.h"
 
 
 // カーネルパニックを引き起こすマクロ。

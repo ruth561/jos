@@ -9,6 +9,7 @@
 #include "type.h"
 #include "string.h"
 #include "logger.h"
+#include "segment.h"
 
 
 __attribute__((section(".stext")))
@@ -27,6 +28,7 @@ void startup(struct GopInfo *gop_info) {
 	serial_console_init();
 
 	processor_init();
+	segment_init();
 
 	logger_init(LOG_LEVEL_INFO);
 

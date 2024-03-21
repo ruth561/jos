@@ -167,5 +167,4 @@ void processor_init()
 
 	INFO("ended processor_init()");
 	set_log_level(log_level);
-	PANIC("FIN~");
 }

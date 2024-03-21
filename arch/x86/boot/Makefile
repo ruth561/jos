@@ -7,7 +7,7 @@ KERNEL_ELF_IMAGE	= kernel.elf
 KERNEL_IMAGE = kernel
 # KERNEL_ELF_IMAGEを作るのに必要なオブジェクトファイルたち
 OBJS	= startup.o serial.o display.o font.o console.o string.o logger.o
-OBJS	+= interrupt.o interrupt_handler.o processor.o
+OBJS	+= interrupt.o interrupt_handler.o processor.o segment.o
 # KERNEL_ELF_IMAGEをリンクするときに使うリンカスクリプト
 LINKER_SCRIPT = kernel.ld
 
