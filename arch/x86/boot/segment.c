@@ -2,7 +2,24 @@
 #include "logger.h"
 #include "panic.h"
 #include "type.h"
+#include "assert.h"
 
+
+struct desc_struct {
+	u16	limit;
+	u16	base_0_15;
+	u8	base_16_23;
+	u8	type: 4;
+	u8	s: 1;
+	u8	dpl: 2;
+	u8	p: 1;
+	u8	seg_limit: 4;
+	u8	avl: 1;
+	u8	l: 1;
+	u8	d: 1;
+	u8	g: 1;
+	u8	base_24_31;
+} __attribute__((packed));
 
 // GDTに設定されている値を取得する関数
 void get_gdt(u16 *limit, u64 *base)
@@ -28,9 +45,18 @@ void inspect_current_gdt()
 	DEBUG("BASE  = 0x%lx", base);
 
 	u16 idx = 0;
-	u64 *desc = (u64 *) base;
+	struct desc_struct *desc = (struct desc_struct *) base;
+	CHECK(sizeof(struct desc_struct) == 8);
+	DEBUG("========== GDT ==========");
 	for (; (u64) desc < base + limit; idx++, desc++) {
-		DEBUG("SEGMENT DESCRIPTOR (0x%hx): %lx", idx, *desc);
+		DEBUG("SEGMENT DESCRIPTOR (0x%hx): %lx\t[ %s%s%s%s%s ] [ DPL = %d ] [ TYPE = %d ]", 
+			idx, *desc,
+			desc->s ? "S" : "-",
+			desc->p ? "P" : "-",
+			desc->l ? "L" : "-",
+			desc->d ? "D" : "-",
+			desc->g ? "G" : "-",
+			desc->dpl, desc->type);
 	}
 }
 
