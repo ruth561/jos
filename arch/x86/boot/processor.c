@@ -114,6 +114,26 @@ static u64 get_cr0()
 	return cr0;
 }
 
+// MSR_ADDR_*
+#define MSR_ADDR_IA32_EFER 0xC0000080
+
+static u64 read_msr(u32 addr)
+{
+	u32 low, high;
+	asm volatile (
+		"rdmsr"
+		: "=a" (low), "=d" (high)
+		: "c" (addr)
+	);
+	return (((u64) high) << 32) | (u64) low;
+}
+
+// MSR_EFER_*
+#define MSR_EFER_F_SCE	(1ULL <<  0) // (R/W) SYSCALL Enable
+#define MSR_EFER_F_LME	(1ULL <<  8) // (R/W) IA-32e Mode Enable
+#define MSR_EFER_F_LMA	(1ULL << 10) //  (R)  IA-32e Mode Active
+#define MSR_EFER_F_NXE	(1ULL << 11) // (R/W) Execute Disable Bit Enable
+
 void processor_init()
 {
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);
@@ -138,6 +158,11 @@ void processor_init()
 	CHECK(check_cpu_feat_msr()); // CPUがMSRレジスタをもっているか
 	INFO("Processor supports RDMSR and WRMSR instructions.");
 
+	// IA-32eモードであることを確認
+	u64 msr_efer = read_msr(MSR_ADDR_IA32_EFER);
+	DEBUG("MSR[IA32_EFER] = %lx", msr_efer);
+	CHECK(msr_efer & MSR_EFER_F_LMA);
+	INFO("Processor is IA-32e mode.");
 	// ＴＯＤＯ：
 
 	INFO("ended processor_init()");
