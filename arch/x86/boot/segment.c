@@ -1,4 +1,5 @@
 #include "segment.h"
+#include "asm/cpu.h"
 #include "logger.h"
 #include "panic.h"
 #include "type.h"
@@ -19,6 +20,12 @@ struct desc_struct {
 	u8	d: 1;
 	u8	g: 1;
 	u8	base_24_31;
+} __attribute__((packed));
+
+struct selector_struct {
+	u16	rpl: 2;
+	u16	ti: 1;
+	u16	index: 13;
 } __attribute__((packed));
 
 // GDTに設定されている値を取得する関数
@@ -47,6 +54,7 @@ void inspect_current_gdt()
 	u16 idx = 0;
 	struct desc_struct *desc = (struct desc_struct *) base;
 	CHECK(sizeof(struct desc_struct) == 8);
+	CHECK(sizeof(struct selector_struct) == 2);
 	DEBUG("========== GDT ==========");
 	for (; (u64) desc < base + limit; idx++, desc++) {
 		DEBUG("SEGMENT DESCRIPTOR (0x%hx): %lx\t[ %s%s%s%s%s ] [ DPL = %d ] [ TYPE = %d ]", 
@@ -58,6 +66,12 @@ void inspect_current_gdt()
 			desc->g ? "G" : "-",
 			desc->dpl, desc->type);
 	}
+
+	struct selector_struct cs;
+	u16 cs_val = get_cs();
+	*(u16 *) &cs = cs_val;
+	DEBUG("CS: %hx\t[ INDEX = %d ] [ TI = %d ] [ RPL = %d ]",
+		cs_val, cs.index, cs.ti, cs.rpl);
 }
 
 void segment_init()
