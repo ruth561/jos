@@ -42,6 +42,40 @@ static bool check_cpuid_feature()
 	return (rflags & RFLAGS_F_ID) == RFLAGS_F_ID;
 }
 
+// cpuid命令
+// どの引数も出力に使われる。eaxのみ、入力にも使われる。
+void cpuid(u32 *eax, u32 *ebx, u32 *ecx, u32 *edx)
+{
+	asm volatile (
+		"movl	%0, %%eax\n\t"
+		"cpuid\n\t"
+		"movl	%%eax, %0\n\t"
+		"movl	%%ebx, %1\n\t"
+		"movl	%%ecx, %2\n\t"
+		"movl	%%edx, %3\n\t" 
+		: "+r" (*eax), "+r" (*ebx), "+r" (*ecx), "+r" (*edx)
+		:
+		: "eax", "ebx", "ecx", "edx"
+	);
+}
+
+// CPUベンダを確認する
+void verify_cpu_vendor()
+{
+	u32 eax, ebx, ecx, edx;
+	char vendor_id_buf[13];
+	eax = 0;
+	cpuid(&eax, &ebx, &ecx, &edx);
+	
+	u32 *p = (u32 *) vendor_id_buf;
+	*p++ = ebx;
+	*p++ = edx;
+	*p++ = ecx;
+	vendor_id_buf[12] = '\0';
+
+	DEBUG("CPU VENDOR ID: \"%s\"", vendor_id_buf);
+}
+
 #define CR0_F_PE	(1ULL << 0)
 
 static u64 get_cr0()
@@ -68,6 +102,13 @@ void processor_init()
 	DEBUG("RFLAGS: 0x%lx", rflags);
 
 	CHECK(check_cpuid_feature());
+
+	u32 eax, ebx, ecx, edx;
+	eax = 0;
+	cpuid(&eax, &ebx, &ecx, &edx);
+	DEBUG("CPUID.%hhxH: eax = 0x%x, ebx = 0x%x, ecx = 0x%x, edx = 0x%x",
+		0, eax, ebx, ecx, edx);
+	verify_cpu_vendor();
 
 	while (1);
 
