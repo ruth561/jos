@@ -76,6 +76,32 @@ void verify_cpu_vendor()
 	DEBUG("CPU VENDOR ID: \"%s\"", vendor_id_buf);
 }
 
+#define CPUID_FEAT_EDX_MSR	(1U << 5)
+
+void verify_cpu_features()
+{
+	u32 eax, ebx, ecx, edx;
+
+	eax = 1;
+	cpuid(&eax, &ebx, &ecx, &edx);
+	
+	DEBUG("CPU FEATURES: %%eax = 0x%x", eax);
+	DEBUG("CPU FEATURES: %%ebx = 0x%x", ebx);
+	DEBUG("CPU FEATURES: %%ecx = 0x%x", ecx);
+	DEBUG("CPU FEATURES: %%edx = 0x%x", edx);
+}
+
+// MSR機能を持っているか？
+bool check_cpu_feat_msr()
+{
+	u32 eax, ebx, ecx, edx;
+
+	eax = 1;
+	cpuid(&eax, &ebx, &ecx, &edx);
+	
+	return (edx & CPUID_FEAT_EDX_MSR) != 0;
+}
+
 #define CR0_F_PE	(1ULL << 0)
 
 static u64 get_cr0()
@@ -93,27 +119,28 @@ void processor_init()
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);
 	INFO("started processor_init()");
 
+	// リアルモードでないことを確認
 	u64 cr0 = get_cr0();
 	CHECK(cr0 & CR0_F_PE); // not Real mode
 	DEBUG("CR0: 0x%lx", cr0);
 	
+	// 仮想8086モードでないことを確認
 	u64 rflags = get_rflags();
 	CHECK(!(rflags & RFLAGS_F_VM)); // not Virtual-8086 mode
 	DEBUG("RFLAGS: 0x%lx", rflags);
 
-	CHECK(check_cpuid_feature());
+	// 各種CPUの機能が存在していることを確認
+	CHECK(check_cpuid_feature()); // CPUがCPUID命令を実装しているか
+	INFO("Processor supports CPUID instruction.");
 
-	u32 eax, ebx, ecx, edx;
-	eax = 0;
-	cpuid(&eax, &ebx, &ecx, &edx);
-	DEBUG("CPUID.%hhxH: eax = 0x%x, ebx = 0x%x, ecx = 0x%x, edx = 0x%x",
-		0, eax, ebx, ecx, edx);
 	verify_cpu_vendor();
+	verify_cpu_features();
+	CHECK(check_cpu_feat_msr()); // CPUがMSRレジスタをもっているか
+	INFO("Processor supports RDMSR and WRMSR instructions.");
 
-	while (1);
+	// ＴＯＤＯ：
 
 	INFO("ended processor_init()");
 	set_log_level(log_level);
-
-	PANIC("...");
+	PANIC("FIN~");
 }
