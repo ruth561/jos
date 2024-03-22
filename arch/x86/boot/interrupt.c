@@ -186,8 +186,7 @@ void common_exception_handler(struct regs_on_stack *regs)
 {
 	println_serial("[!-- EXCEPTION (#%s) --!]", exception_str[regs->vector]);
 	print_regs(regs);
-	println_serial("+++ KERNEL PANIC +++");
-	while (1) Halt();
+	PANIC("...");
 }
 
 // #PF例外ハンドラ
@@ -231,8 +230,7 @@ void page_fault_handler(struct regs_on_stack *regs)
 	println_serial("\t%s by SHADOW-STACK access.", ec->ss ? "Caused" : "Not caused");
 	println_serial("\t%s by HLAT paging.", ec->hlat ? "Caused" : "Not caused");
 	println_serial("\t%s by SGX-specific violation.", ec->sgx ? "Caused" : "Not caused");
-	println_serial("++++++++++ KERNEL PANIC ++++++++++");
-	while (1) Halt();
+	PANIC("...");
 }
 
 // すべての割り込みハンドラはこの関数を呼び出すことになっている。
@@ -245,10 +243,6 @@ void do_common_int_handler(struct regs_on_stack *regs)
 	// スタックのアラインメント制約を守れているか、を確認する。
 	ALIGN(16) int data;
 	CHECK(align_check(&data, 16));
-
-	println_serial("[+] INTERRUPT");
-	println_serial("    VECTOR = %d", regs->vector);
-
 	get_irq_handler(regs->vector)(regs);
 }
 
@@ -317,6 +311,5 @@ void interrupt_init()
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
 	
-	*(char *) 0xffffffffffffffff = 1;
 	while (1) Halt();
 }
