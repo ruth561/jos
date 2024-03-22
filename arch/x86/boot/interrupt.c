@@ -205,6 +205,7 @@ void set_idt_entry(int vector, void *handler)
 	u64 address = (u64) handler;
 
 	struct gate_desc *desc = &idt[vector];
+	memset(desc, 0, sizeof(struct gate_desc));
 	desc->offset_15_0 = address & 0xFFFF;
 	desc->offset_16_31 = (address >> 16) & 0xFFFF;
 	desc->offset_32_63 = (address >> 32) & 0xFFFFFFFF;
@@ -212,6 +213,7 @@ void set_idt_entry(int vector, void *handler)
 	desc->bits.dpl = 0;
 	desc->bits.p = 1;
 	desc->ss = get_cs();
+	DEBUG("gate (%hx): %lx %lx", vector, *(u64 *) &idt[vector], *((u64 *) &idt[vector] + 1));
 }
 
 void interrupt_init()

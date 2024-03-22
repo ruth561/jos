@@ -12,6 +12,9 @@ typedef __builtin_va_list va_list;
 // srcからdstへn-bytes分をコピーする関数
 void *memcpy(void *dst, const void *src, usize n);
 
+// sへ文字cをn個書き込んでいく処理
+void *memset(void *s, int c, usize n);
+
 #define FORMAT_STRING_BUF_SIZE 0x100
 
 // フォーマット文字列と可変長の引数を受け取り、フォーマット文字列に

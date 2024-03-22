@@ -14,6 +14,16 @@ void *memcpy(void *dst, const void *src, usize n)
 	return dst;
 }
 
+// TODO: 高速化
+void *memset(void *s, int c, usize n)
+{
+	u8 *p = s;
+	while (n--) {
+		*p++ = (u8) c;
+	}
+	return s;
+}
+
 // prefixがsのプレフィックスであればtrue(=1)を返す関数。
 // 一致していなければfalse(=0)を返す。
 static int match_prefix(const char *s, const char *prefix)
