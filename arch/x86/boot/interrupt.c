@@ -310,6 +310,4 @@ void interrupt_init()
 
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
-	
-	while (1) Halt();
 }

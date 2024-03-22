@@ -8,6 +8,10 @@ extern io_addr_t global_serial_port;
 
 io_addr_t serial_init();
 
+// 割り込みの初期化が終わってから呼び出される初期化関数。
+// 割り込みハンドラの設定を行う。
+void serial_init_late();
+
 // ポート宛てに1-byteのデータを送信しようと試みる関数。
 // 送信に成功すれば0を、失敗すれば-1を返す。
 // UARTの送信バッファは16-bytesしかないので、バッファが

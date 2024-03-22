@@ -67,6 +67,17 @@ void clear_mask(int irq)
 	INFO("Clear IRQ #%d mask.", irq);
 }
 
+#define PIC_EOI	0x20
+
+void intel8259_end_of_interrupt(int irq)
+{
+	if (irq >= 8) {
+		outb(PIC1_COMM, PIC_EOI);
+	}
+	
+	outb(PIC0_COMM, PIC_EOI);
+}
+
 void intel8259_init()
 {
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);

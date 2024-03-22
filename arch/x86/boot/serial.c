@@ -1,6 +1,10 @@
 #include "asm/cpu.h"
 #include "asm/io.h"
 #include "console.h"
+#include "intel8259.h"
+#include "interrupt.h"
+#include "irq.h"
+#include "panic.h"
 #include "serial.h"
 
 
@@ -143,6 +147,39 @@ io_addr_t serial_init() {
         println_display("[ INFO ] global_serial_port = %hx", global_serial_port);
         return global_serial_port;
 }
+
+// シリアルポートのIRQハンドラ
+// 文字が送られてきたら発火し、処理を行う。
+static void serial_irq_handler(struct regs_on_stack *regs)
+{
+        // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
+        int c;
+	while ((c = try_recvb(global_serial_port)) >= 0) {
+		switch (c) {
+			case 'r':
+				clear_screen(&Red);
+				break;
+			case 'b':
+				clear_screen(&Blue);
+				break;
+			case 'g':
+				clear_screen(&Green);
+				break;
+			default:
+				sendb(global_serial_port, 'x');
+		}
+	}
+        // 本当は特定の割り込みコントローラの実装を使いたくなかったけど、、（ＴＯＤＯ：）
+        intel8259_end_of_interrupt(regs->vector - 32);
+}
+
+void serial_init_late()
+{
+        // COM1とCOM2の両方の設定を行う。
+        set_irq_handler(32 + 3, serial_irq_handler);
+        set_irq_handler(32 + 4, serial_irq_handler);
+}
+
 
 int try_sendb(io_addr_t port, u8 data)
 {

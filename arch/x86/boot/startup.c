@@ -34,26 +34,9 @@ void startup(struct GopInfo *gop_info) {
 
 	interrupt_init();
 
+	serial_init_late();
 
 	INFO("Initialization completed!");
-
-	// シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
-	while (1) {
-		char c = recvb(global_serial_port);
-		switch (c) {
-			case 'r':
-				clear_screen(&Red);
-				break;
-			case 'b':
-				clear_screen(&Blue);
-				break;
-			case 'g':
-				clear_screen(&Green);
-				break;
-			default:
-				sendb(global_serial_port, 'x');
-		}
-	}
 
 	while (1) Halt();
 }
