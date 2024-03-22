@@ -70,7 +70,7 @@ void inspect_current_gdt()
 	struct selector_struct cs;
 	u16 cs_val = get_cs();
 	*(u16 *) &cs = cs_val;
-	DEBUG("CS: %hx\t[ INDEX = %d ] [ TI = %d ] [ RPL = %d ]",
+	DEBUG("CS: 0x%hx [ INDEX = %d ] [ TI = %d ] [ RPL = %d ]",
 		cs_val, cs.index, cs.ti, cs.rpl);
 }
 

@@ -12,7 +12,7 @@
 #define PANIC(...)						\
 	do {							\
 		FATAL(__VA_ARGS__);				\
-		prints("++++++++ KERNEL PANIC ++++++++\r\n");	\
+		println_serial("+++ KERNEL PANIC +++");		\
 		while (1) Halt();				\
 		UNREACHABLE();					\
 	} while (0)

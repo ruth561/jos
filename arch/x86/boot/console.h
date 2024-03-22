@@ -8,7 +8,7 @@
 // ディスプレイコンソールの初期化を行う関数
 // ディスプレイコンソールとは、ディスプレイ上に出力されるコンソールのこと。
 void display_console_init(struct GopInfo *gop_info, struct PixelColor *fg,
-                          struct PixelColor *bg);
+			  struct PixelColor *bg);
 
 // ディスプレイコンソールに文字列を書き込む関数。コンソールの右端に達した場合は
 // 置き換えしたりせず、書き込みを終了する。
@@ -16,7 +16,13 @@ void display_console_init(struct GopInfo *gop_info, struct PixelColor *fg,
 //      - 返り値: 書き込んだ文字数
 usize put_string_to_display(const char *s);
 
-#define printd(format, ...) put_string_to_display(format_string(format, ##__VA_ARGS__))
+#define print_display(format, ...) put_string_to_display(format_string(format, ##__VA_ARGS__))
+
+#define println_display(format, ...)			\
+	do {						\
+		print_display(format, ##__VA_ARGS__);	\
+		print_display("\n");			\
+	} while (0);
 
 // シリアルコンソールの初期化を行う関数
 void serial_console_init();
@@ -25,10 +31,10 @@ void serial_console_init();
 // シリアルポートを経由してログメッセージなどを送信するときに使われる。
 void send_string_to_serial(const char *s);
 
-#define prints(format, ...) send_string_to_serial(format_string(format, ##__VA_ARGS__))
+#define print_serial(format, ...) send_string_to_serial(format_string(format, ##__VA_ARGS__))
 
-#define println_serial(format, ...)             \
-        do {                                    \
-                prints(format, ##__VA_ARGS__);  \
-                prints("\r\n");                 \
-        } while (0);
+#define println_serial(format, ...)			\
+	do {						\
+		print_serial(format, ##__VA_ARGS__);	\
+		print_serial("\r\n");			\
+	} while (0);
