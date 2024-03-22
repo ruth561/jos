@@ -12,7 +12,34 @@
 
 
 #define NR_IDT_ENTRIES	256
+#define NR_EXCEPTIONS	21
 
+// 割り込みベクタから例外の名前への変換用配列。
+static const char *exception_str[NR_EXCEPTIONS] = {
+	"DE",
+	"DB",
+	"NMI",
+	"BP",
+	"OF",
+	"BR",
+	"UD",
+	"NM",
+	"DF",
+	"CSO",
+	"TS",
+	"NP",
+	"SS",
+	"GP",
+	"PF",
+	"RSVD",
+	"MF",
+	"AC",
+	"MC",
+	"XM",
+	"VE",
+};
+
+// IDTエントリのデータ構造
 struct gate_desc {
 	u16	offset_15_0;
 	u16	ss;
@@ -31,37 +58,99 @@ struct gate_desc {
 
 ALIGN(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
 
-// 割り込みハンドラの関数名を作成するマクロ。
-// DEFINE_INT_HANDLER(name)マクロによって関数を実装しておく必要がある。
-#define INT_HANDLER(name) name##_int_handler
+// 割り込みハンドラは割り込みベクタごとに別名で実装されており、その
+// 関数名は"int<vector>_handler"である。このマクロは、その関数名を
+// 作るためのマクロである。
+#define INT_HANDLER_NAME(vector) int##vector##_handler
 
-// 割り込みハンドラの本体を実装するためのマクロ。
-// interrupt_handler.hで定義されている同名のマクロと合わせて使う。
-// 詳細は、interrupt_handler.hのファイル上部のコメントを参照。
-//
-// 使い方としては、以下のようにマクロのあとに関数実装を続けて書く。
-//
-// DEFINE_INT_HANDLER(pf)
-// {
-//         ...
-// }
-// 
-// 関数の実装内部では`regs`という引数が使える。この引数の型は
-// struct regs_on_stack *であり、割り込みが起きたときのレジスタの
-// 状態を示している。
-#define DEFINE_INT_HANDLER(name)					\
-	void name##_int_handler();					\
-	void do_##name##_int_handler(struct regs_on_stack *regs)
+void INT_HANDLER_NAME(0)();	// EXCEPTION
+void INT_HANDLER_NAME(1)();
+void INT_HANDLER_NAME(2)();
+void INT_HANDLER_NAME(3)();
+void INT_HANDLER_NAME(4)();
+void INT_HANDLER_NAME(5)();
+void INT_HANDLER_NAME(6)();
+void INT_HANDLER_NAME(7)();
+void INT_HANDLER_NAME(8)();
+void INT_HANDLER_NAME(9)();
+void INT_HANDLER_NAME(10)();
+void INT_HANDLER_NAME(11)();
+void INT_HANDLER_NAME(12)();
+void INT_HANDLER_NAME(13)();
+void INT_HANDLER_NAME(14)();
+void INT_HANDLER_NAME(15)();
+void INT_HANDLER_NAME(16)();
+void INT_HANDLER_NAME(17)();
+void INT_HANDLER_NAME(18)();
+void INT_HANDLER_NAME(19)();
+void INT_HANDLER_NAME(20)();
+void INT_HANDLER_NAME(32)();	// EXTERNAL INTERRUPT
+void INT_HANDLER_NAME(33)();
+void INT_HANDLER_NAME(34)();
+void INT_HANDLER_NAME(35)();
+void INT_HANDLER_NAME(36)();
+void INT_HANDLER_NAME(37)();
+void INT_HANDLER_NAME(38)();
+void INT_HANDLER_NAME(39)();
+void INT_HANDLER_NAME(40)();
+void INT_HANDLER_NAME(41)();
+void INT_HANDLER_NAME(42)();
+void INT_HANDLER_NAME(43)();
+void INT_HANDLER_NAME(44)();
+void INT_HANDLER_NAME(45)();
+void INT_HANDLER_NAME(46)();
+void INT_HANDLER_NAME(47)();
 
-// カーネルパニックを引き起こすハンドラの基本実装。
-#define DEFINE_INT_HANDLER_BASIC(name)				\
-	DEFINE_INT_HANDLER(name)				\
-	{							\
-		ALIGN(16) int data;				\
-		CHECK(align_check(&data, 16));			\
-		print_regs(regs);				\
-		PANIC("[!-- EXCEPTION (#" #name ") --!]");	\
-	}
+static void *int_handlers[] = {
+	&INT_HANDLER_NAME(0),
+	&INT_HANDLER_NAME(1),
+	&INT_HANDLER_NAME(2),
+	&INT_HANDLER_NAME(3),
+	&INT_HANDLER_NAME(4),
+	&INT_HANDLER_NAME(5),
+	&INT_HANDLER_NAME(6),
+	&INT_HANDLER_NAME(7),
+	&INT_HANDLER_NAME(8),
+	&INT_HANDLER_NAME(9),
+	&INT_HANDLER_NAME(10),
+	&INT_HANDLER_NAME(11),
+	&INT_HANDLER_NAME(12),
+	&INT_HANDLER_NAME(13),
+	&INT_HANDLER_NAME(14),
+	&INT_HANDLER_NAME(15),
+	&INT_HANDLER_NAME(16),
+	&INT_HANDLER_NAME(17),
+	&INT_HANDLER_NAME(18),
+	&INT_HANDLER_NAME(19),
+	&INT_HANDLER_NAME(20),
+	(void *) 21,
+	(void *) 22,
+	(void *) 23,
+	(void *) 24,
+	(void *) 25,
+	(void *) 26,
+	(void *) 27,
+	(void *) 28,
+	(void *) 29,
+	(void *) 30,
+	(void *) 31,
+	&INT_HANDLER_NAME(32),
+	&INT_HANDLER_NAME(33),
+	&INT_HANDLER_NAME(34),
+	&INT_HANDLER_NAME(35),
+	&INT_HANDLER_NAME(36),
+	&INT_HANDLER_NAME(37),
+	&INT_HANDLER_NAME(38),
+	&INT_HANDLER_NAME(39),
+	&INT_HANDLER_NAME(40),
+	&INT_HANDLER_NAME(41),
+	&INT_HANDLER_NAME(42),
+	&INT_HANDLER_NAME(43),
+	&INT_HANDLER_NAME(44),
+	&INT_HANDLER_NAME(45),
+	&INT_HANDLER_NAME(46),
+	&INT_HANDLER_NAME(47),
+};
 
 static void print_regs(struct regs_on_stack *regs)
 {
@@ -91,39 +180,14 @@ int align_check(void *p, u64 align)
 }
 #pragma clang optimize on
 
-DEFINE_INT_HANDLER(DE)	// 0
-{
-	// 適切にスタックの16-bytesアラインメントが行われていれば、
-	// ここの検証は通過できるはず。
-#pragma clang optimize off
-	ALIGN(16) int data;
-	CHECK(align_check(&data, 16));
-#pragma clang optimize on
-
-	print_regs(regs);
-	PANIC("Divide Error");
-}
-
-DEFINE_INT_HANDLER_BASIC(DB)	// 1
-DEFINE_INT_HANDLER_BASIC(NMI)	// 2
-DEFINE_INT_HANDLER_BASIC(BP)	// 3
-DEFINE_INT_HANDLER_BASIC(OF)	// 4
-DEFINE_INT_HANDLER_BASIC(BR)	// 5
-DEFINE_INT_HANDLER_BASIC(UD)	// 6
-DEFINE_INT_HANDLER_BASIC(NM)	// 7
-
-DEFINE_INT_HANDLER(DF)		// 8
+// 共通の例外ハンドラとして実行される関数。
+void commont_exception_handler(struct regs_on_stack *regs)
 {
 	print_regs(regs);
-	PANIC("Double Fault");
+	PANIC("[!-- EXCEPTION (#%s) --!]", exception_str[regs->vector]);
 }
 
-DEFINE_INT_HANDLER_BASIC(CSO)	// 9
-DEFINE_INT_HANDLER_BASIC(TS)	// 10
-DEFINE_INT_HANDLER_BASIC(NP)	// 11
-DEFINE_INT_HANDLER_BASIC(SS)	// 12
-DEFINE_INT_HANDLER_BASIC(GP)	// 13
-
+// #PF例外ハンドラ
 struct error_code_pf {
 	u8	p: 1;
 	u8	w_r: 1;
@@ -138,7 +202,7 @@ struct error_code_pf {
 	u16	_1;
 } __attribute__((packed));
 
-DEFINE_INT_HANDLER(PF)		// 14
+void page_fault_handler(struct regs_on_stack *regs)
 {
 	// 適切にスタックの16-bytesアラインメントが行われていれば、
 	// ここの検証は通過できるはず。
@@ -168,36 +232,22 @@ DEFINE_INT_HANDLER(PF)		// 14
 	while (1) Halt();
 }
 
-DEFINE_INT_HANDLER_BASIC(RSVD)	// 15
-DEFINE_INT_HANDLER_BASIC(MF)	// 16
-DEFINE_INT_HANDLER_BASIC(AC)	// 17
-DEFINE_INT_HANDLER_BASIC(MC)	// 18
-DEFINE_INT_HANDLER_BASIC(XM)	// 19
-DEFINE_INT_HANDLER_BASIC(VE)	// 20
+// すべての割り込みハンドラはこの関数を呼び出すことになっている。
+// regs->vectorをもとに、その割り込みがどこから送られてきたのかを判断し、
+// それぞれの処理に分配する。
+void do_common_int_handler(struct regs_on_stack *regs)
+{
+	// スタックのアラインメントチェック
+	// この関数を呼び出す関数はアセンブリで記述しているので、
+	// スタックのアラインメント制約を守れているか、を確認する。
+	ALIGN(16) int data;
+	CHECK(align_check(&data, 16));
 
-static void *int_handlers[] = {
-	&INT_HANDLER(DE),
-	&INT_HANDLER(DB),
-	&INT_HANDLER(NMI),
-	&INT_HANDLER(BP),
-	&INT_HANDLER(OF),
-	&INT_HANDLER(BR),
-	&INT_HANDLER(UD),
-	&INT_HANDLER(NM),
-	&INT_HANDLER(DF),
-	&INT_HANDLER(CSO),
-	&INT_HANDLER(TS),
-	&INT_HANDLER(NP),
-	&INT_HANDLER(SS),
-	&INT_HANDLER(GP),
-	&INT_HANDLER(PF),
-	&INT_HANDLER(RSVD),
-	&INT_HANDLER(MF),
-	&INT_HANDLER(AC),
-	&INT_HANDLER(MC),
-	&INT_HANDLER(XM),
-	&INT_HANDLER(VE),
-};
+	println_serial("[+] INTERRUPT");
+	println_serial("    VECTOR = %d", regs->vector);
+
+	// ＴＯＤＯ：
+}
 
 void set_idt_entry(int vector, void *handler)
 {
