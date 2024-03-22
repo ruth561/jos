@@ -19,50 +19,50 @@
 
 void remap(u8 primary_vector_offset, u8 secondary_vector_offset)
 {
-	u8 pic0_mask = IoIn8(PIC0_DATA);
-	u8 pic1_mask = IoIn8(PIC1_DATA);
+	u8 pic0_mask = inb(PIC0_DATA);
+	u8 pic1_mask = inb(PIC1_DATA);
 	DEBUG("pic0_mask: 0x%hhx", pic0_mask);
 	DEBUG("pic1_mask: 0x%hhx", pic1_mask);
 
 	// プライマリの初期化
-	IoOut8(PIC0_COMM, ICW1_INIT | ICW1_ICW4);
+	outb(PIC0_COMM, ICW1_INIT | ICW1_ICW4);
 	io_wait();
-	IoOut8(PIC0_DATA, primary_vector_offset);
+	outb(PIC0_DATA, primary_vector_offset);
 	io_wait();
-	IoOut8(PIC0_DATA, 0b00000100); // 第2ピンにセカンダリが接続されている
+	outb(PIC0_DATA, 0b00000100); // 第2ピンにセカンダリが接続されている
 	io_wait();
-	IoOut8(PIC0_DATA, ICW4_8086);
+	outb(PIC0_DATA, ICW4_8086);
 	io_wait();
 
 	// セカンダリの初期化
-	IoOut8(PIC1_COMM, ICW1_INIT | ICW1_ICW4);
+	outb(PIC1_COMM, ICW1_INIT | ICW1_ICW4);
 	io_wait();
-	IoOut8(PIC1_DATA, secondary_vector_offset);
+	outb(PIC1_DATA, secondary_vector_offset);
 	io_wait();
-	IoOut8(PIC1_DATA, 2); // 第2ピンにセカンダリが接続されている
+	outb(PIC1_DATA, 2); // 第2ピンにセカンダリが接続されている
 	io_wait();
-	IoOut8(PIC1_DATA, ICW4_8086);
+	outb(PIC1_DATA, ICW4_8086);
 	io_wait();
 
-	IoOut8(PIC0_DATA, pic0_mask);
-	IoOut8(PIC1_DATA, pic1_mask);
+	outb(PIC0_DATA, pic0_mask);
+	outb(PIC1_DATA, pic1_mask);
 }
 
 void clear_mask(int irq)
 {
 	DEBUG("clear_mask: clear IRQ #%d", irq);
 	if (irq < 8) { // primary
-		u8 mask = IoIn8(PIC0_DATA);
+		u8 mask = inb(PIC0_DATA);
 		io_wait();
 		DEBUG("clear_mask: primary mask 0x%hhx -> 0x%hhx", mask, mask & ~(1 << irq));
-		IoOut8(PIC0_DATA, mask & ~(1 << irq));
+		outb(PIC0_DATA, mask & ~(1 << irq));
 	} else { // secondary
 		irq -= 8;
 		CHECK(irq < 8);
-		u8 mask = IoIn8(PIC1_DATA);
+		u8 mask = inb(PIC1_DATA);
 		io_wait();
 		DEBUG("clear_mask: secondary mask 0x%hhx -> 0x%hhx", mask, mask & ~(1 << irq));
-		IoOut8(PIC1_DATA, mask & ~(1 << irq));
+		outb(PIC1_DATA, mask & ~(1 << irq));
 	}
 	INFO("Clear IRQ #%d mask.", irq);
 }
