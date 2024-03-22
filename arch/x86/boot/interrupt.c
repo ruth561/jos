@@ -9,10 +9,11 @@
 #include "compiler.h"
 #include "assert.h"
 #include "utils.h"
+#include "irq.h"
 
 
 #define NR_IDT_ENTRIES	256
-#define NR_EXCEPTIONS	21
+#define NR_EXCEPTIONS	21	// 現在のintel64アーキテクチャは全部で21個の例外を実装している
 
 // 割り込みベクタから例外の名前への変換用配列。
 static const char *exception_str[NR_EXCEPTIONS] = {
@@ -101,7 +102,7 @@ void INT_HANDLER_NAME(45)();
 void INT_HANDLER_NAME(46)();
 void INT_HANDLER_NAME(47)();
 
-static void *int_handlers[] = {
+static void *int_handlers[NR_IRQS] = {
 	&INT_HANDLER_NAME(0),
 	&INT_HANDLER_NAME(1),
 	&INT_HANDLER_NAME(2),
@@ -154,17 +155,17 @@ static void *int_handlers[] = {
 
 static void print_regs(struct regs_on_stack *regs)
 {
-	FATAL("%%rax = 0x%lx, %%rbx = 0x%lx, %%rcx = 0x%lx, %%rcx = 0x%lx",
+	println_serial("%%rax = 0x%lx, %%rbx = 0x%lx, %%rcx = 0x%lx, %%rcx = 0x%lx",
 		regs->rax, regs->rbx, regs->rcx, regs->rdx);
-	FATAL("%%rsi = 0x%lx, %%rdi = 0x%lx, %%rbp = 0x%lx, %%rsp = 0x%lx",
+	println_serial("%%rsi = 0x%lx, %%rdi = 0x%lx, %%rbp = 0x%lx, %%rsp = 0x%lx",
 		regs->rsi, regs->rdi, regs->rbp, (u64) regs); // regsが指している場所こそrspの値
-	FATAL("%%r8  = 0x%lx, %%r9  = 0x%lx, %%r10 = 0x%lx, %%r11 = 0x%lx",
+	println_serial("%%r8  = 0x%lx, %%r9  = 0x%lx, %%r10 = 0x%lx, %%r11 = 0x%lx",
 		regs->r8 , regs->r9 , regs->r10, regs->r11);
-	FATAL("%%r12 = 0x%lx, %%r13 = 0x%lx, %%r14 = 0x%lx, %%r15 = 0x%lx",
+	println_serial("%%r12 = 0x%lx, %%r13 = 0x%lx, %%r14 = 0x%lx, %%r15 = 0x%lx",
 		regs->r12, regs->r13, regs->r14, regs->r15);
-	FATAL("%%rip = 0x%lx, %%cs  = 0x%lx, %%ss  = 0x%lx, %%rsp = 0x%lx",
+	println_serial("%%rip = 0x%lx, %%cs  = 0x%lx, %%ss  = 0x%lx, %%rsp = 0x%lx",
 		regs->rip, regs->cs , regs->ss , regs->rsp);
-	FATAL("error_code = 0x%lx, %%rflags = 0x%lx",
+	println_serial("error_code = 0x%lx, %%rflags = 0x%lx",
 		regs->error_code, regs->rflags);
 }
 
@@ -181,10 +182,12 @@ int align_check(void *p, u64 align)
 #pragma clang optimize on
 
 // 共通の例外ハンドラとして実行される関数。
-void commont_exception_handler(struct regs_on_stack *regs)
+void common_exception_handler(struct regs_on_stack *regs)
 {
+	println_serial("[!-- EXCEPTION (#%s) --!]", exception_str[regs->vector]);
 	print_regs(regs);
-	PANIC("[!-- EXCEPTION (#%s) --!]", exception_str[regs->vector]);
+	println_serial("+++ KERNEL PANIC +++");
+	while (1) Halt();
 }
 
 // #PF例外ハンドラ
@@ -246,7 +249,7 @@ void do_common_int_handler(struct regs_on_stack *regs)
 	println_serial("[+] INTERRUPT");
 	println_serial("    VECTOR = %d", regs->vector);
 
-	// ＴＯＤＯ：
+	get_irq_handler(regs->vector)(regs);
 }
 
 void set_idt_entry(int vector, void *handler)
@@ -277,11 +280,23 @@ void interrupt_init()
 	DEBUG("interrupt_init");
 
 	// IDTの設定
+	// ※ irqとvectorの番号が対応関係にある。
 	int vector = 0;
-	for (; vector < (sizeof(int_handlers) / sizeof(void *)); vector++) {
+	for (; vector < NR_IRQS; vector++) {
 		set_idt_entry(vector, int_handlers[vector]);
 	}
-	INFO("Registered %d interrupt handler", vector);
+
+	// IRQの初期化をここで行う。
+	irq_init();
+
+	// デフォルトのIRQハンドラを設定する。
+	irq_t irq = 0;
+	for (; irq < NR_EXCEPTIONS; irq++) {
+		set_irq_handler(irq, common_exception_handler);
+	}
+
+	// 特別なIRQハンドラを設定する。
+	set_irq_handler(14, page_fault_handler); // 14はハードコーディング（ＴＯＤＯ：）
 	
 	// IDTRレジスタにIDTを登録
 	u16 size = NR_IDT_ENTRIES * sizeof(struct gate_desc);
@@ -302,5 +317,6 @@ void interrupt_init()
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
 	
+	*(char *) 0xffffffffffffffff = 1;
 	while (1) Halt();
 }
