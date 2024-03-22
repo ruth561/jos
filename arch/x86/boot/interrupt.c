@@ -2,6 +2,7 @@
 #include "asm/cpu.h"
 #include "console.h"
 #include "display.h"
+#include "intel8259.h"
 #include "logger.h"
 #include "panic.h"
 #include "type.h"
@@ -238,12 +239,18 @@ void interrupt_init()
 	DEBUG("lidt.size = 0x%hx", size);
 	DEBUG("lidt.address = 0x%lx", address);
 	load_idt(size, address);
-	
+
+	// 割り込みコントローラの初期化を行う
+	intel8259_init();
+
+	// 割り込みを有効にし、
+	// IFフラグがセットされていることを確認する。
+	X86_STI();
+	u64 rflags = get_rflags();
+	DEBUG("RFLAGS: %lx", rflags);
+
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
-
-	// X86_INT3();
-
-	*(volatile int *) 0xfffffffffffffff0= 3; // PF?
-	*(volatile int *) 0xdeadbeefcafebabe = 3; // GP
+	
+	while (1) Halt();
 }

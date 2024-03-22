@@ -8,19 +8,6 @@
 #define RFLAGS_F_VM	(1ULL << 17)
 #define RFLAGS_F_ID	(1ULL << 21)
 
-static u64 get_rflags()
-{
-	u64 rflags;
-	asm volatile (
-		"pushfq\n\t"
-		"popq	%0"
-		: "=r" (rflags)
-		:
-		: "memory"
-	);
-	return rflags;
-}
-
 static void set_rflags(u64 rflags)
 {
 	asm volatile (

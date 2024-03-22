@@ -47,6 +47,11 @@ inline u32 IoIn32(io_addr_t addr) {
         return ret;
 }
 
+inline void io_wait()
+{
+        IoOut8(0x80, 0);
+}
+
 // lidt命令を行う関数。lidt命令には、IDTのベースアドレスと
 // そのサイズを指定する必要がある。
 inline void load_idt(u16 size, u64 address)
@@ -66,6 +71,8 @@ inline u16 get_cs()
 }
 
 #define X86_INT3() asm volatile ("int3");
+#define X86_STI() asm volatile ("sti");
+#define X86_CLI() asm volatile ("cli");
 
 inline u64 get_cr2()
 {
@@ -75,4 +82,17 @@ inline u64 get_cr2()
 		: "=r" (ret)
 	);
 	return ret;
+}
+
+inline u64 get_rflags()
+{
+	u64 rflags;
+	asm volatile (
+		"pushfq\n\t"
+		"popq	%0"
+		: "=r" (rflags)
+		:
+		: "memory"
+	);
+	return rflags;
 }

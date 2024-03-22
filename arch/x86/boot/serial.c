@@ -114,6 +114,7 @@ int init_port(io_addr_t port) {
         // TODO: よく分かっていない
         IoOut8(port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
         IoOut8(port + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+        IoOut8(port + 1, 0x01);    // 割り込みを有効！
 
         int error = loopback_test(port);
         if (error) {
