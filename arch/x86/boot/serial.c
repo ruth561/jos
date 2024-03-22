@@ -49,17 +49,17 @@ io_addr_t global_serial_port;
 //      - divisor: ボーレートを決める値（115200 / divisorがボーレートになる）
 static void set_baud_rate(io_addr_t port, u16 divisor) {
         // DLAB-bitをセットする。
-        IoOut8(port + SERIAL_REG_LINE_CONTROL, 0x80);
+        outb(port + SERIAL_REG_LINE_CONTROL, 0x80);
         // ボーレートの除数を書き込む。
-        IoOut8(port + SERIAL_REG_DIVISOR_LOW, divisor & 0xFF);
-        IoOut8(port + SERIAL_REG_DIVISOR_HIGH, (divisor >> 8) & 0xFF);
+        outb(port + SERIAL_REG_DIVISOR_LOW, divisor & 0xFF);
+        outb(port + SERIAL_REG_DIVISOR_HIGH, (divisor >> 8) & 0xFF);
 }
 
 // ラインプロトコルをlctlで表された値に設定する関数。
 // lctlに使えるフラグはLCTL_BITS_*マクロで定義されている。
 static void set_line_protocol(io_addr_t port, unsigned char lctl)
 {
-        IoOut8(port + SERIAL_REG_LINE_CONTROL, LCTL_BITS_8N1);
+        outb(port + SERIAL_REG_LINE_CONTROL, LCTL_BITS_8N1);
 }
 
 #pragma clang optimize off
@@ -74,32 +74,32 @@ static void busy_loop()
 static int loopback_test(io_addr_t port)
 {
         u8 data;
-        u8 save_mctl = IoIn8(port + SERIAL_REG_MODEM_CONTROL);
+        u8 save_mctl = inb(port + SERIAL_REG_MODEM_CONTROL);
         println_display("save_mctl: 0x%hhx", save_mctl);
-        IoOut8(port + SERIAL_REG_MODEM_CONTROL, MCTL_LOOPBACK);
+        outb(port + SERIAL_REG_MODEM_CONTROL, MCTL_LOOPBACK);
 
         // 書き込んでからすぐに読み出しを行うと、テストに失敗する可能性があるので、
         // 途中にビジーループを挟むとよい。
-        IoOut8(port + SERIAL_REG_DATA, 0xAB);
+        outb(port + SERIAL_REG_DATA, 0xAB);
         busy_loop();
-        data = IoIn8(port + SERIAL_REG_DATA);
+        data = inb(port + SERIAL_REG_DATA);
         println_display("[ LOOPBACK TEST ] write: 0xAB, read: 0x%hhx", data);
         if (data != 0xAB) {
-                IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+                outb(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
                 return -1;
         }
 
-        IoOut8(port + SERIAL_REG_DATA, 0x34);
+        outb(port + SERIAL_REG_DATA, 0x34);
         busy_loop();
-        data = IoIn8(port + SERIAL_REG_DATA);
+        data = inb(port + SERIAL_REG_DATA);
         println_display("[ LOOPBACK TEST ] write: 0x34, read: 0x%hhx", data);
         if (data != 0x34) {
-                IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+                outb(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
                 return -1;
         }
 
         // restore
-        IoOut8(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
+        outb(port + SERIAL_REG_MODEM_CONTROL, save_mctl);
         return 0;
 }
 
@@ -108,13 +108,13 @@ static int loopback_test(io_addr_t port)
 int init_port(io_addr_t port) {
         println_display("[ init_port ] port: %hx", port);
         // 割り込みをすべて禁止にする
-        IoOut8(port + SERIAL_REG_INT_ENABLE, 0x00);
+        outb(port + SERIAL_REG_INT_ENABLE, 0x00);
         set_baud_rate(port, 1);
         set_line_protocol(port, LCTL_BITS_8N1);
         // TODO: よく分かっていない
-        IoOut8(port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
-        IoOut8(port + 4, 0x0B);    // IRQs enabled, RTS/DSR set
-        IoOut8(port + 1, 0x01);    // 割り込みを有効！
+        outb(port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
+        outb(port + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+        outb(port + 1, 0x01);    // 割り込みを有効！
 
         int error = loopback_test(port);
         if (error) {
@@ -146,9 +146,9 @@ io_addr_t serial_init() {
 
 int try_sendb(io_addr_t port, u8 data)
 {
-        u8 thre = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
+        u8 thre = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
         if (thre) {
-                IoOut8(port + SERIAL_REG_DATA, data);
+                outb(port + SERIAL_REG_DATA, data);
                 return 0;
         } else {
                 return -1;
@@ -162,9 +162,9 @@ void sendb(io_addr_t port, u8 data)
 
 int try_recvb(io_addr_t port)
 {
-        u8 ready = IoIn8(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
+        u8 ready = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
         if (ready) {
-                int data = IoIn8(port + SERIAL_REG_DATA);
+                int data = inb(port + SERIAL_REG_DATA);
                 return data;
         } else {
                 return -1;
