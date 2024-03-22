@@ -83,5 +83,4 @@ void segment_init()
 
 	INFO("ended segment_init()");
 	set_log_level(log_level);
-	PANIC("FIN~");
 }

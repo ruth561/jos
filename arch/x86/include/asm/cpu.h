@@ -66,3 +66,13 @@ inline u16 get_cs()
 }
 
 #define X86_INT3() asm volatile ("int3");
+
+inline u64 get_cr2()
+{
+        u64 ret;
+	asm volatile (
+		"movq	%%cr2, %0"
+		: "=r" (ret)
+	);
+	return ret;
+}

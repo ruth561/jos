@@ -26,3 +26,9 @@ void serial_console_init();
 void send_string_to_serial(const char *s);
 
 #define prints(format, ...) send_string_to_serial(format_string(format, ##__VA_ARGS__))
+
+#define println_serial(format, ...)             \
+        do {                                    \
+                prints(format, ##__VA_ARGS__);  \
+                prints("\r\n");                 \
+        } while (0);

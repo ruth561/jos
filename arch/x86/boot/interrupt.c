@@ -58,9 +58,7 @@ ALIGN(8) struct gate_desc idt[NR_IDT_ENTRIES] = {0};
 	{							\
 		ALIGN(16) int data;				\
 		CHECK(align_check(&data, 16));			\
-								\
 		print_regs(regs);				\
-		*(volatile int *) 0xdeadbeefcafebabe = 3;	\
 		PANIC("[!-- EXCEPTION (#" #name ") --!]");	\
 	}
 
@@ -125,6 +123,20 @@ DEFINE_INT_HANDLER_BASIC(NP)	// 11
 DEFINE_INT_HANDLER_BASIC(SS)	// 12
 DEFINE_INT_HANDLER_BASIC(GP)	// 13
 
+struct error_code_pf {
+	u8	p: 1;
+	u8	w_r: 1;
+	u8	u_s: 1;
+	u8	rsvd: 1;
+	u8	i_d: 1;
+	u8	pk: 1;
+	u8	ss: 1;
+	u8	hlat: 1;
+	u8	_0: 7;
+	u8	sgx: 1;
+	u16	_1;
+} __attribute__((packed));
+
 DEFINE_INT_HANDLER(PF)		// 14
 {
 	// 適切にスタックの16-bytesアラインメントが行われていれば、
@@ -135,7 +147,24 @@ DEFINE_INT_HANDLER(PF)		// 14
 #pragma clang optimize on
 
 	print_regs(regs);
-	PANIC("Page Fault");
+
+	struct error_code_pf *ec = (struct error_code_pf *) &regs->error_code;
+
+	println_serial("[!-- EXCEPTION (#PF) --!]");
+	println_serial("Instruction Address: 0x%lx", regs->rip);
+	println_serial("Page-Fault Address: 0x%lx", get_cr2());
+	println_serial("Error Cause:")
+	println_serial("\tCaused by %s.", ec->p ? "PAGE-LEVEL PROTECTION" : "NON-PRESENT PAGE");
+	println_serial("\tCaused by %s access.", ec->w_r ? "WRITE" : "READ");
+	println_serial("\tCaused by %s-mode access.", ec->u_s ? "USER" : "SUPERVISOR");
+	println_serial("\t%s by RESERVED bit violation.", ec->rsvd ? "Caused" : "Not caused");
+	println_serial("\t%s by INSTRUCTION FETCH.", ec->i_d ? "Caused" : "Not caused");
+	println_serial("\t%s by PROTECTION-KEY violation.", ec->pk ? "Caused" : "Not caused");
+	println_serial("\t%s by SHADOW-STACK access.", ec->ss ? "Caused" : "Not caused");
+	println_serial("\t%s by HLAT paging.", ec->hlat ? "Caused" : "Not caused");
+	println_serial("\t%s by SGX-specific violation.", ec->sgx ? "Caused" : "Not caused");
+	println_serial("++++++++++ KERNEL PANIC ++++++++++");
+	while (1) Halt();
 }
 
 DEFINE_INT_HANDLER_BASIC(RSVD)	// 15
@@ -189,6 +218,7 @@ void interrupt_init()
 {
 	CHECK(sizeof(struct gate_desc) == 16);
 	CHECK(is_aligned(&idt, 8));
+	CHECK(sizeof(struct error_code_pf) == 4);
 
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);
 	DEBUG("interrupt_init");
@@ -209,6 +239,8 @@ void interrupt_init()
 	
 	set_log_level(log_level);
 	INFO("Interrupt initialization completed.");
+
+	// X86_INT3();
 
 	*(volatile int *) 0xfffffffffffffff0= 3; // PF?
 	*(volatile int *) 0xdeadbeefcafebabe = 3; // GP
