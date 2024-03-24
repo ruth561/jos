@@ -100,12 +100,14 @@ struct cmd_desc {
 };
 
 static void do_info();
+static void do_continue();
 
 #define CMDS_ENTRY(name, func)	\
-	{ .cmd = name " ", .cmd_size = sizeof(name), .cmd_func = func }
+	{ .cmd = name, .cmd_size = sizeof(name), .cmd_func = func }
 
 static struct cmd_desc cmds[] = {
 	CMDS_ENTRY("info", do_info),
+	CMDS_ENTRY("continue", do_continue),
 };
 
 // 新しいコマンドを受け付ける準備をする関数
@@ -175,4 +177,9 @@ void jdb_init()
 static void do_info()
 {
 	println_serial("do_info");
+}
+
+static void do_continue()
+{
+	println_serial("do_continue");
 }
