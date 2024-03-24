@@ -71,8 +71,11 @@ static void do_backtrace(const char *sub_cmd);
 	{ .cmd = name, .cmd_size = sizeof(name), .cmd_func = func }
 
 static struct cmd_desc cmds[] = {
+	CMDS_ENTRY("i", do_info),
 	CMDS_ENTRY("info", do_info),
+	CMDS_ENTRY("c", do_continue),
 	CMDS_ENTRY("continue", do_continue),
+	CMDS_ENTRY("bt", do_backtrace),
 	CMDS_ENTRY("backtrace", do_backtrace),
 };
 
@@ -91,7 +94,8 @@ static void do_cmd()
 
 	cmd_buf[idx] = '\0';
 	for (int i = 0; i < sizeof(cmds) / sizeof(struct cmd_desc); i++) {
-		if (match_prefix(cmd_buf, cmds[i].cmd)) {
+		if (match_prefix(cmd_buf, cmds[i].cmd) &&
+		    (cmd_buf[cmds[i].cmd_size - 1] == ' ' || cmd_buf[cmds[i].cmd_size - 1] == '\0')) {
 			cmds[i].cmd_func(&cmd_buf[cmds[i].cmd_size]);
 			goto done;
 		}
