@@ -14,7 +14,10 @@
 
 
 void hoge(int n) {
-	if (n == 0) X86_INT3();
+	if (n == 0) {
+		X86_INT3();
+		return;
+	}
 	hoge(n - 1);
 }
 
@@ -44,7 +47,9 @@ void startup(struct GopInfo *gop_info) {
 
 	jdb_init();
 
-	hoge(10);
+	for (int i = 0; i < 10; i++) {
+		hoge(i + 3);
+	}
 	// INFO("Initialization completed!");
 
 	while (1) Halt();
