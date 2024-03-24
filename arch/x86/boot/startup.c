@@ -13,6 +13,11 @@
 #include "segment.h"
 
 
+void hoge(int n) {
+	if (n == 0) X86_INT3();
+	hoge(n - 1);
+}
+
 __attribute__((section(".stext")))
 void startup(struct GopInfo *gop_info) {
 
@@ -39,7 +44,7 @@ void startup(struct GopInfo *gop_info) {
 
 	jdb_init();
 
-	X86_INT3();
+	hoge(10);
 	// INFO("Initialization completed!");
 
 	while (1) Halt();

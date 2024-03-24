@@ -5,6 +5,7 @@
 #include "irq.h"
 #include "logger.h"
 #include "panic.h"
+#include "string.h"
 #include "type.h"
 
 
@@ -13,56 +14,15 @@
 #define JDB_STATE_RUNNING	1
 
 // JDBの現在の状態
-int jdb_state = JDB_STATE_RUNNING;
+static int jdb_state = JDB_STATE_RUNNING;
+static struct regs_on_stack *jdb_regs;
+
+static void new_cmd();
 
 // その値が有効なアドレス値かどうかを検証する関数
-bool is_valid_address_naive(u64 addr)
+static bool is_valid_address_naive(u64 addr)
 {
 	return 0x100000 <= addr && addr < 0x200000;
-}
-
-// とりあえず非ゼロであればよいものとする。
-// ＴＯＤＯ：
-bool is_valid_rbp(u64 rbp)
-{
-	return 0 < rbp;
-}
-
-u64 get_saved_rbp(u64 rbp)
-{
-	// スタックは以下のような状態になっている。
-	// |-------------|
-	// |  saved rbp  | <--- rbp
-	// |-------------|
-	return *(u64 *) (rbp);
-}
-
-// rbpから戻りアドレスを取得する関数
-u64 get_ret_addr(u64 rbp)
-{
-	// スタックは以下のような状態になっている。
-	// |-------------|
-	// |   ret addr  | 
-	// |-------------|
-	// |  saved rbp  | <--- rbp
-	// |-------------|
-	return *(u64 *) (rbp + 8);
-}
-
-static void back_trace(struct regs_on_stack *regs)
-{
-	println_serial("========== back trace ==========");
-	u32 depth = 0;
-	u64 rbp = regs->rbp;
-	u64 ret_addr = get_ret_addr(rbp);
-	while (is_valid_address_naive(ret_addr)) {
-		println_serial("%hhx: # 0x%lx", depth, ret_addr);
-		rbp = get_saved_rbp(rbp);
-		ret_addr = get_ret_addr(rbp);
-		depth++;
-	}
-
-	while (1) Halt();
 }
 
 // ブレークポイントに達したときに発火するIRQハンドラ。
@@ -70,9 +30,10 @@ static void on_break_point(struct regs_on_stack *regs)
 {
 	CHECK(jdb_state == JDB_STATE_RUNNING);
 	jdb_state = JDB_STATE_STOP;
+	jdb_regs = regs;
 
 	println_serial("break at 0x%lx", regs->rip);
-	back_trace(regs);
+	new_cmd();
 
 	// シリアルから入力を受け付け、プログラムを再度実行するまで待機する。
 	while (jdb_state == JDB_STATE_STOP) {
@@ -82,7 +43,10 @@ static void on_break_point(struct regs_on_stack *regs)
 	CHECK(jdb_state != JDB_STATE_STOP);
 }
 
+
+//
 // jdb shellの実装
+//
 
 #define CMD_BUF_SIZE	80
 static int idx;
@@ -99,8 +63,9 @@ struct cmd_desc {
 	cmd_func_t cmd_func;
 };
 
-static void do_info();
-static void do_continue();
+static void do_info(const char *sub_cmd);
+static void do_continue(const char *sub_cmd);
+static void do_backtrace(const char *sub_cmd);
 
 #define CMDS_ENTRY(name, func)	\
 	{ .cmd = name, .cmd_size = sizeof(name), .cmd_func = func }
@@ -108,6 +73,7 @@ static void do_continue();
 static struct cmd_desc cmds[] = {
 	CMDS_ENTRY("info", do_info),
 	CMDS_ENTRY("continue", do_continue),
+	CMDS_ENTRY("backtrace", do_backtrace),
 };
 
 // 新しいコマンドを受け付ける準備をする関数
@@ -133,7 +99,9 @@ static void do_cmd()
 	println_serial("Unknown command: %s", cmd_buf);
 
 done:
-	new_cmd();
+	if (jdb_state == JDB_STATE_STOP) {
+		new_cmd();
+	}
 }
 
 // シリアル通信で文字を受け取ったときに呼ばれるコールバック
@@ -164,7 +132,6 @@ static void serial_recv_callback(char c)
 void jdb_init()
 {
 	jdb_state = JDB_STATE_RUNNING;
-	new_cmd();
 	register_serial_recv_callback(serial_recv_callback);
 	set_irq_handler(IRQ_BP, on_break_point);
 }
@@ -174,12 +141,49 @@ void jdb_init()
 // JDBコマンドの実装
 //
 
-static void do_info()
+static void do_info(const char *sub_cmd)
 {
-	println_serial("do_info");
+	DEBUG("do_info");
+	if (match_prefix(sub_cmd, "regs")) {
+		println_serial("%%rax = 0x%lx, %%rbx = 0x%lx, %%rcx = 0x%lx, %%rcx = 0x%lx",
+			jdb_regs->rax, jdb_regs->rbx, jdb_regs->rcx, jdb_regs->rdx);
+		println_serial("%%rsi = 0x%lx, %%rdi = 0x%lx, %%rbp = 0x%lx, %%rsp = 0x%lx",
+			jdb_regs->rsi, jdb_regs->rdi, jdb_regs->rbp, (u64) jdb_regs); // jdb_regsが指している場所こそrspの値
+		println_serial("%%r8  = 0x%lx, %%r9  = 0x%lx, %%r10 = 0x%lx, %%r11 = 0x%lx",
+			jdb_regs->r8 , jdb_regs->r9 , jdb_regs->r10, jdb_regs->r11);
+		println_serial("%%r12 = 0x%lx, %%r13 = 0x%lx, %%r14 = 0x%lx, %%r15 = 0x%lx",
+			jdb_regs->r12, jdb_regs->r13, jdb_regs->r14, jdb_regs->r15);
+		println_serial("%%rip = 0x%lx, %%cs  = 0x%lx, %%ss  = 0x%lx, %%rsp = 0x%lx",
+			jdb_regs->rip, jdb_regs->cs , jdb_regs->ss , jdb_regs->rsp);
+		println_serial("error_code = 0x%lx, %%rflags = 0x%lx",
+			jdb_regs->error_code, jdb_regs->rflags);
+	}
 }
 
-static void do_continue()
+static void do_continue(const char *sub_cmd)
 {
-	println_serial("do_continue");
+	DEBUG("do_continue");
+	jdb_state = JDB_STATE_RUNNING;
+}
+
+static void do_backtrace(const char *sub_cmd)
+{
+	DEBUG("do_backtrace");
+	// スタックは以下のような状態になっている。
+	// |-------------|
+	// |   ret addr  | 
+	// |-------------|
+	// |  saved rbp  | <--- rbp
+	// |-------------|
+
+	u32 depth = 0;
+	println_serial("%hhx: # 0x%lx <-- rip", depth++, jdb_regs->rip);
+
+	u64 rbp = jdb_regs->rbp;
+	u64 ret_addr = *(u64 *) (rbp + 8);
+	while (is_valid_address_naive(ret_addr)) {
+		println_serial("%hhx: # 0x%lx", depth++, ret_addr);
+		rbp = *(u64 *) (rbp);
+		ret_addr = *(u64 *) (rbp + 8);
+	}
 }
