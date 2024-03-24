@@ -2,6 +2,7 @@
 #include "boot.h"
 #include "console.h"
 #include "interrupt.h"
+#include "jdb.h"
 #include "panic.h"
 #include "processor.h"
 #include "serial.h"
@@ -36,6 +37,10 @@ void startup(struct GopInfo *gop_info) {
 
 	serial_init_late();
 
+	jdb_init();
+
+	X86_INT3();
+	
 	INFO("Initialization completed!");
 
 	while (1) Halt();

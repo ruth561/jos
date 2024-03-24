@@ -12,9 +12,6 @@
 #include "irq.h"
 
 
-#define NR_IDT_ENTRIES	256
-#define NR_EXCEPTIONS	21	// 現在のintel64アーキテクチャは全部で21個の例外を実装している
-
 // 割り込みベクタから例外の名前への変換用配列。
 static const char *exception_str[NR_EXCEPTIONS] = {
 	"DE",
@@ -290,7 +287,7 @@ void interrupt_init()
 	}
 
 	// 特別なIRQハンドラを設定する。
-	set_irq_handler(14, page_fault_handler); // 14はハードコーディング（ＴＯＤＯ：）
+	set_irq_handler(IRQ_PF, page_fault_handler); // 14はハードコーディング（ＴＯＤＯ：）
 	
 	// IDTRレジスタにIDTを登録
 	u16 size = NR_IDT_ENTRIES * sizeof(struct gate_desc);

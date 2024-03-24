@@ -3,6 +3,12 @@
 #include "type.h"
 
 
+#define NR_IDT_ENTRIES	256
+#define NR_EXCEPTIONS	21	// 現在のintel64アーキテクチャは全部で21個の例外を実装している
+
+#define IRQ_BP		3
+#define IRQ_PF		14
+
 // 割り込みハンドラでスタックに積まれるレジスタ。
 // 割り込みハンドラのメイン処理部分の引数で渡される。
 struct regs_on_stack {
