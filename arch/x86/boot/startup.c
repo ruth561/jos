@@ -7,7 +7,6 @@
 #include "processor.h"
 #include "serial.h"
 #include "display.h"
-#include "shell.h"
 #include "type.h"
 #include "string.h"
 #include "logger.h"
@@ -40,9 +39,7 @@ void startup(struct GopInfo *gop_info) {
 
 	jdb_init();
 
-	// シリアル通信を利用したシェルの初期化を行う。
-	shell_init();
-
+	X86_INT3();
 	// INFO("Initialization completed!");
 
 	while (1) Halt();

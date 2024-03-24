@@ -237,7 +237,7 @@ void register_serial_recv_callback(serial_recv_callback_t callback)
         serial_recv_callback = callback;
 }
 
-void serial_putc(char c)
+void putc_serial(char c)
 {
         sendb(global_serial_port, c);
 }

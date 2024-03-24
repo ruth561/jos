@@ -20,7 +20,7 @@ typedef void (*serial_recv_callback_t)(char c);
 void register_serial_recv_callback(serial_recv_callback_t callback);
 
 // シリアル通信で1文字を送信する関数。
-void serial_putc(char c);
+void putc_serial(char c);
 
 // シリアルコンソールに文字列を送信する関数。
 // シリアルポートを経由してログメッセージなどを送信するときに使われる。
