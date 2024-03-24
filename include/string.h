@@ -32,3 +32,8 @@ int match_prefix(const char *s, const char *prefix);
 //      - %lx: 符号なし64-bit整数を受け取り、それを16桁の16進数文字列に
 //             して挿入する。先頭は0埋めされる。
 char *format_string(const char *format, ...);
+
+// 文字列を数字と解釈してu64の値に変換する関数。
+// 変換に成功すれば*outに結果を書き込みtrueを返す。
+// 変換に失敗した場合はfalseを返す。
+bool str_to_u64(const char *s, u64 *out);

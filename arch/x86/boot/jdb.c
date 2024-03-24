@@ -66,6 +66,7 @@ struct cmd_desc {
 static void do_info(const char *sub_cmd);
 static void do_continue(const char *sub_cmd);
 static void do_backtrace(const char *sub_cmd);
+static void do_x(const char *sub_cmd);
 
 #define CMDS_ENTRY(name, func)	\
 	{ .cmd = name, .cmd_size = sizeof(name), .cmd_func = func }
@@ -77,6 +78,7 @@ static struct cmd_desc cmds[] = {
 	CMDS_ENTRY("continue", do_continue),
 	CMDS_ENTRY("bt", do_backtrace),
 	CMDS_ENTRY("backtrace", do_backtrace),
+	CMDS_ENTRY("x", do_x),
 };
 
 // 新しいコマンドを受け付ける準備をする関数
@@ -189,5 +191,19 @@ static void do_backtrace(const char *sub_cmd)
 		println_serial("%hhx: # 0x%lx", depth++, ret_addr);
 		rbp = *(u64 *) (rbp);
 		ret_addr = *(u64 *) (rbp + 8);
+	}
+}
+
+static void do_x(const char *sub_cmd)
+{
+	u64 addr;
+	bool ret = str_to_u64(sub_cmd, &addr);
+	if (ret) {
+		println_serial("0x%lx:\t0x%lx 0x%lx", addr + 0x00, *(u64 *) (addr + 0x00), *(u64 *) (addr + 0x08));
+		println_serial("0x%lx:\t0x%lx 0x%lx", addr + 0x10, *(u64 *) (addr + 0x10), *(u64 *) (addr + 0x18));
+		println_serial("0x%lx:\t0x%lx 0x%lx", addr + 0x20, *(u64 *) (addr + 0x20), *(u64 *) (addr + 0x28));
+		println_serial("0x%lx:\t0x%lx 0x%lx", addr + 0x30, *(u64 *) (addr + 0x30), *(u64 *) (addr + 0x38));
+	} else {
+		println_serial("Invalid number: %s", sub_cmd);
 	}
 }

@@ -261,3 +261,56 @@ char *format_string(const char *fmt, ...)
 	buf[idx] = '\0';
 	return buf;
 }
+
+
+static bool hex_str_to_u64(const char *s, u64 *out)
+{
+	*out = 0;
+	while (*s) {
+		*out *= 16;
+		switch (*s) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				*out += *s - '0';
+				break;
+			case 'a':
+			case 'b':
+			case 'c':
+			case 'd':
+			case 'e':
+			case 'f':
+				*out += *s - 'a' + 10;
+				break;
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+				*out += *s - 'A' + 10;
+				break;
+			default:
+				return false;
+		}
+		s++;
+	}
+	return true;
+}
+
+bool str_to_u64(const char *s, u64 *out)
+{
+	if (match_prefix(s, "0x")) {
+		return hex_str_to_u64(s += 2, out);
+	} else {
+		// ＴＯＤＯ：10進数とかにも対応したい
+		return false;
+	}
+}
