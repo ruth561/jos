@@ -175,11 +175,10 @@ static void serial_irq_handler(struct regs_on_stack *regs)
 
 void serial_init_late()
 {
-        // COM1とCOM2の両方の設定を行う。
-        set_irq_handler(32 + 3, serial_irq_handler);
-        set_irq_handler(32 + 4, serial_irq_handler);
+        // COM1とCOM2の両方の割り込みハンドラの設定を行う。
+        set_irq_handler(isa_irq_to_irq(ISA_IRQ_COM1), serial_irq_handler);
+        set_irq_handler(isa_irq_to_irq(ISA_IRQ_COM2), serial_irq_handler);
 }
-
 
 int try_sendb(io_addr_t port, u8 data)
 {
