@@ -150,26 +150,18 @@ io_addr_t serial_init() {
         return global_serial_port;
 }
 
+static serial_recv_callback_t serial_recv_callback = (void *) 0;
+
 // シリアルポートのIRQハンドラ
 // 文字が送られてきたら発火し、処理を行う。
 static void serial_irq_handler(struct regs_on_stack *regs)
 {
-        // シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
+        // 登録されたコールバックを呼び出すだけ
         int c;
 	while ((c = try_recvb(global_serial_port)) >= 0) {
-		switch (c) {
-			case 'r':
-				clear_screen(&Red);
-				break;
-			case 'b':
-				clear_screen(&Blue);
-				break;
-			case 'g':
-				clear_screen(&Green);
-				break;
-			default:
-				sendb(global_serial_port, 'x');
-		}
+                if (serial_recv_callback) {
+                        serial_recv_callback(c);
+                }
 	}
         irq_eoi(global_serial_port_irq);
 }
@@ -191,6 +183,16 @@ void serial_init_late()
         DEBUG("global_serial_port_irq = %d", global_serial_port_irq);
 
         set_irq_handler(global_serial_port_irq, serial_irq_handler);
+}
+
+void register_serial_recv_callback(serial_recv_callback_t callback)
+{
+        serial_recv_callback = callback;
+}
+
+void serial_putc(char c)
+{
+        sendb(global_serial_port, c);
 }
 
 int try_sendb(io_addr_t port, u8 data)

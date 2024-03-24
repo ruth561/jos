@@ -15,6 +15,10 @@ void *memcpy(void *dst, const void *src, usize n);
 // sへ文字cをn個書き込んでいく処理
 void *memset(void *s, int c, usize n);
 
+// prefixがsのプレフィックスであればtrue(=1)を返す関数。
+// 一致していなければfalse(=0)を返す。
+int match_prefix(const char *s, const char *prefix);
+
 #define FORMAT_STRING_BUF_SIZE 0x100
 
 // フォーマット文字列と可変長の引数を受け取り、フォーマット文字列に

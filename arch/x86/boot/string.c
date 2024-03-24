@@ -24,9 +24,7 @@ void *memset(void *s, int c, usize n)
 	return s;
 }
 
-// prefixがsのプレフィックスであればtrue(=1)を返す関数。
-// 一致していなければfalse(=0)を返す。
-static int match_prefix(const char *s, const char *prefix)
+int match_prefix(const char *s, const char *prefix)
 {
 	while (*prefix) {
 		if (*s++ != *prefix++) {
