@@ -150,6 +150,53 @@ io_addr_t serial_init() {
         return global_serial_port;
 }
 
+// ポート宛てに1-byteのデータを送信しようと試みる関数。
+// 送信に成功すれば0を、失敗すれば-1を返す。
+// UARTの送信バッファは16-bytesしかないので、バッファが
+// いっぱいになっていると送信できない可能性がある。
+int try_sendb(io_addr_t port, u8 data)
+{
+        u8 thre = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
+        if (thre) {
+                outb(port + SERIAL_REG_DATA, data);
+                return 0;
+        } else {
+                return -1;
+        }
+}
+
+// portにdataを送信する。送信バッファがいっぱいのときは
+// 処理が停止するので注意！
+void sendb(io_addr_t port, u8 data)
+{
+        while (try_sendb(port, data));
+}
+
+// ポートから1-byteのデータを受信しようと試みる関数。
+// 受信するデータがあれば、そのデータを返す。
+// データはu8型であり、[0, 255]の間におさまる。
+// 受信するデータがなかった場合は-1を返す。
+int try_recvb(io_addr_t port)
+{
+        u8 ready = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
+        if (ready) {
+                int data = inb(port + SERIAL_REG_DATA);
+                return data;
+        } else {
+                return -1;
+        }
+}
+
+// portから1-byteのデータを受信する関数。
+// 受信バッファにデータがない場合はブロックするので注意。
+u8 recvb(io_addr_t port)
+{
+        int ret;
+        while ((ret = try_recvb(port)) < 0);
+        // CHECK(0 <= ret <= 255);
+        return (u8) ret;
+}
+
 static serial_recv_callback_t serial_recv_callback = (void *) 0;
 
 // シリアルポートのIRQハンドラ
@@ -195,37 +242,10 @@ void serial_putc(char c)
         sendb(global_serial_port, c);
 }
 
-int try_sendb(io_addr_t port, u8 data)
+void send_string_to_serial(const char *s)
 {
-        u8 thre = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
-        if (thre) {
-                outb(port + SERIAL_REG_DATA, data);
-                return 0;
-        } else {
-                return -1;
-        }
-}
-
-void sendb(io_addr_t port, u8 data)
-{
-        while (try_sendb(port, data));
-}
-
-int try_recvb(io_addr_t port)
-{
-        u8 ready = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
-        if (ready) {
-                int data = inb(port + SERIAL_REG_DATA);
-                return data;
-        } else {
-                return -1;
-        }
-}
-
-u8 recvb(io_addr_t port)
-{
-        int ret;
-        while ((ret = try_recvb(port)) < 0);
-        // CHECK(0 <= ret <= 255);
-        return (u8) ret;
+	while (*s) {
+		sendb(global_serial_port, *s);
+		s++;
+	}
 }
