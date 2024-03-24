@@ -15,6 +15,10 @@ void *memcpy(void *dst, const void *src, usize n);
 // sへ文字cをn個書き込んでいく処理
 void *memset(void *s, int c, usize n);
 
+// prefixがsのプレフィックスであればtrue(=1)を返す関数。
+// 一致していなければfalse(=0)を返す。
+int match_prefix(const char *s, const char *prefix);
+
 #define FORMAT_STRING_BUF_SIZE 0x100
 
 // フォーマット文字列と可変長の引数を受け取り、フォーマット文字列に
@@ -28,3 +32,8 @@ void *memset(void *s, int c, usize n);
 //      - %lx: 符号なし64-bit整数を受け取り、それを16桁の16進数文字列に
 //             して挿入する。先頭は0埋めされる。
 char *format_string(const char *format, ...);
+
+// 文字列を数字と解釈してu64の値に変換する関数。
+// 変換に成功すれば*outに結果を書き込みtrueを返す。
+// 変換に失敗した場合はfalseを返す。
+bool str_to_u64(const char *s, u64 *out);

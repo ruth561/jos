@@ -85,11 +85,3 @@ void serial_console_init()
 {
 	// not implemented
 }
-
-void send_string_to_serial(const char *s)
-{
-	while (*s) {
-		sendb(global_serial_port, *s);
-		s++;
-	}
-}

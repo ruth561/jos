@@ -2,6 +2,7 @@
 #include "boot.h"
 #include "console.h"
 #include "interrupt.h"
+#include "jdb.h"
 #include "panic.h"
 #include "processor.h"
 #include "serial.h"
@@ -11,6 +12,14 @@
 #include "logger.h"
 #include "segment.h"
 
+
+void hoge(int n) {
+	if (n == 0) {
+		X86_INT3();
+		return;
+	}
+	hoge(n - 1);
+}
 
 __attribute__((section(".stext")))
 void startup(struct GopInfo *gop_info) {
@@ -30,30 +39,18 @@ void startup(struct GopInfo *gop_info) {
 	processor_init();
 	segment_init();
 
-	logger_init(LOG_LEVEL_INFO);
+	logger_init(LOG_LEVEL_DEBUG);
 
 	interrupt_init();
 
+	serial_init_late();
 
-	INFO("Initialization completed!");
+	jdb_init();
 
-	// シリアルコンソールから受け取った文字に応じて画面の色を変化させる処理
-	while (1) {
-		char c = recvb(global_serial_port);
-		switch (c) {
-			case 'r':
-				clear_screen(&Red);
-				break;
-			case 'b':
-				clear_screen(&Blue);
-				break;
-			case 'g':
-				clear_screen(&Green);
-				break;
-			default:
-				sendb(global_serial_port, 'x');
-		}
+	for (int i = 0; i < 10; i++) {
+		hoge(i + 3);
 	}
+	// INFO("Initialization completed!");
 
 	while (1) Halt();
 }

@@ -27,10 +27,6 @@ usize put_string_to_display(const char *s);
 // シリアルコンソールの初期化を行う関数
 void serial_console_init();
 
-// シリアルコンソールに文字列を送信する関数。
-// シリアルポートを経由してログメッセージなどを送信するときに使われる。
-void send_string_to_serial(const char *s);
-
 #define print_serial(format, ...) send_string_to_serial(format_string(format, ##__VA_ARGS__))
 
 #define println_serial(format, ...)			\

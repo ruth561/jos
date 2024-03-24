@@ -1,6 +1,9 @@
 #include "asm/cpu.h"
 #include "asm/io.h"
 #include "console.h"
+#include "irq.h"
+#include "logger.h"
+#include "panic.h"
 #include "serial.h"
 
 
@@ -44,6 +47,9 @@
 // ＴＯＤＯ：シリアルポートが見当たらなかったときの処理は実装していない。
 io_addr_t global_serial_port;
 
+// シリアルポートが登録されているIRQの番号（※ ISA IRQではない）
+irq_t global_serial_port_irq = -1;
+
 // シリアルポートのボーレートを設定する関数。
 //      - port: ポートのI/Oアドレス
 //      - divisor: ボーレートを決める値（115200 / divisorがボーレートになる）
@@ -65,7 +71,7 @@ static void set_line_protocol(io_addr_t port, unsigned char lctl)
 #pragma clang optimize off
 static void busy_loop()
 {
-        for (int i = 0; i < 1000000; i++);
+        for (int i = 0; i < 10000000; i++);
 }
 #pragma clang optimize on
 
@@ -144,6 +150,10 @@ io_addr_t serial_init() {
         return global_serial_port;
 }
 
+// ポート宛てに1-byteのデータを送信しようと試みる関数。
+// 送信に成功すれば0を、失敗すれば-1を返す。
+// UARTの送信バッファは16-bytesしかないので、バッファが
+// いっぱいになっていると送信できない可能性がある。
 int try_sendb(io_addr_t port, u8 data)
 {
         u8 thre = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_THRE);
@@ -155,11 +165,17 @@ int try_sendb(io_addr_t port, u8 data)
         }
 }
 
+// portにdataを送信する。送信バッファがいっぱいのときは
+// 処理が停止するので注意！
 void sendb(io_addr_t port, u8 data)
 {
         while (try_sendb(port, data));
 }
 
+// ポートから1-byteのデータを受信しようと試みる関数。
+// 受信するデータがあれば、そのデータを返す。
+// データはu8型であり、[0, 255]の間におさまる。
+// 受信するデータがなかった場合は-1を返す。
 int try_recvb(io_addr_t port)
 {
         u8 ready = inb(port + SERIAL_REG_LINE_STATUS) & (1u << LSTATUS_BIT_DR);
@@ -171,10 +187,65 @@ int try_recvb(io_addr_t port)
         }
 }
 
+// portから1-byteのデータを受信する関数。
+// 受信バッファにデータがない場合はブロックするので注意。
 u8 recvb(io_addr_t port)
 {
         int ret;
         while ((ret = try_recvb(port)) < 0);
         // CHECK(0 <= ret <= 255);
         return (u8) ret;
+}
+
+static serial_recv_callback_t serial_recv_callback = (void *) 0;
+
+// シリアルポートのIRQハンドラ
+// 文字が送られてきたら発火し、処理を行う。
+static void serial_irq_handler(struct regs_on_stack *regs)
+{
+        // 登録されたコールバックを呼び出すだけ
+        int c;
+	while ((c = try_recvb(global_serial_port)) >= 0) {
+                if (serial_recv_callback) {
+                        serial_recv_callback(c);
+                }
+	}
+        irq_eoi(global_serial_port_irq);
+}
+
+void serial_init_late()
+{
+        INFO("serial_init_late()");
+        // COM1とCOM2の両方の割り込みハンドラの設定を行う。
+        switch (global_serial_port) {
+                case COM1_PORT:
+                        global_serial_port_irq = isa_irq_to_irq(ISA_IRQ_COM1);
+                        break;
+                case COM2_PORT:
+                        global_serial_port_irq = isa_irq_to_irq(ISA_IRQ_COM2);
+                        break;
+                default:
+                        PANIC("global_serial_port is not registered.");
+        }
+        DEBUG("global_serial_port_irq = %d", global_serial_port_irq);
+
+        set_irq_handler(global_serial_port_irq, serial_irq_handler);
+}
+
+void register_serial_recv_callback(serial_recv_callback_t callback)
+{
+        serial_recv_callback = callback;
+}
+
+void putc_serial(char c)
+{
+        sendb(global_serial_port, c);
+}
+
+void send_string_to_serial(const char *s)
+{
+	while (*s) {
+		sendb(global_serial_port, *s);
+		s++;
+	}
 }

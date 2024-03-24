@@ -1,6 +1,16 @@
+// Intel 8259 PICのデバイスドライバ
+// 
+// Intel 8259 PIC（以降i8259）では、外部デバイスの割り込み線を
+// 1つの割り込み線にまとめ、CPUに割り込みを送るPICである。
+// i8259は16の入力をもち、それぞれIRQ #0〜IRQ #15のように番号づけ
+// されている。IRQという名前がシステムのものと被ってしまうため、
+// ISA IRQという名前で区別している。
+
+
 #include "intel8259.h"
 #include "asm/cpu.h"
 #include "assert.h"
+#include "irq.h"
 #include "logger.h"
 
 
@@ -48,6 +58,8 @@ void remap(u8 primary_vector_offset, u8 secondary_vector_offset)
 	outb(PIC1_DATA, pic1_mask);
 }
 
+// 割り込みマスクをクリアする。
+// マスクがクリアされると、割り込みが有効になる。
 void clear_mask(int irq)
 {
 	DEBUG("clear_mask: clear IRQ #%d", irq);
@@ -67,12 +79,23 @@ void clear_mask(int irq)
 	INFO("Clear IRQ #%d mask.", irq);
 }
 
+#define PIC_EOI	0x20
+
+void intel8259_end_of_interrupt(int irq)
+{
+	if (irq >= 8) {
+		outb(PIC1_COMM, PIC_EOI);
+	}
+	
+	outb(PIC0_COMM, PIC_EOI);
+}
+
 void intel8259_init()
 {
 	int log_level = set_log_level(LOG_LEVEL_DEBUG);
 	INFO("started intel8259_init()");
 
-	remap(0x20, 0x28);
+	remap(ISA_IRQ_BASE, ISA_IRQ_BASE + 8);
 	clear_mask(3);
 	clear_mask(4);
 	
