@@ -1,5 +1,6 @@
 #include "irq.h"
 #include "assert.h"
+#include "intel8259.h"
 #include "logger.h"
 #include "panic.h"
 
@@ -10,6 +11,15 @@ void unregistered_irq_handler(struct regs_on_stack *regs)
 }
 
 irq_handler_t irq_handlers[NR_IRQS];
+
+void irq_eoi(irq_t irq)
+{
+	if (ISA_IRQ_BASE <= irq && irq < ISA_IRQ_BASE + NR_ISA_IRQS) {
+		intel8259_end_of_interrupt(irq_to_isa_irq(irq));
+	} else {
+		PANIC("Cannot send EOI to unregistered IRQ #%d", irq);
+	}
+}
 
 void set_irq_handler(irq_t irq, irq_handler_t handler)
 {

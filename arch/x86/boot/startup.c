@@ -30,7 +30,7 @@ void startup(struct GopInfo *gop_info) {
 	processor_init();
 	segment_init();
 
-	logger_init(LOG_LEVEL_INFO);
+	logger_init(LOG_LEVEL_DEBUG);
 
 	interrupt_init();
 

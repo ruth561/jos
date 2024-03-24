@@ -13,6 +13,7 @@
 // IDTのベクタと一致する。IRQ #40とは割り込みベクタが40のものである。
 
 
+#include "assert.h"
 #include "interrupt.h"
 #include "type.h"
 
@@ -32,11 +33,25 @@ typedef void (*irq_handler_t)(struct regs_on_stack *);
 #define ISA_IRQ_COM1	4
 #define ISA_IRQ_COM2	3
 
+#define NR_ISA_IRQS	16
+
 // ISA IRQからIRQへの変換関数
 static inline irq_t isa_irq_to_irq(irq_t isa_irq)
 {
+	CHECK(0 <= isa_irq);
+	CHECK(isa_irq < NR_ISA_IRQS);
 	return isa_irq + ISA_IRQ_BASE;
 }
+
+static inline irq_t irq_to_isa_irq(irq_t irq)
+{
+	CHECK(ISA_IRQ_BASE <= irq);
+	CHECK(irq < ISA_IRQ_BASE + NR_ISA_IRQS);
+	return irq - ISA_IRQ_BASE;
+}
+
+// End Of Interrupt
+void irq_eoi(irq_t irq);
 
 void set_irq_handler(irq_t irq, irq_handler_t handler);
 

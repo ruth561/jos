@@ -1,9 +1,8 @@
 #include "asm/cpu.h"
 #include "asm/io.h"
 #include "console.h"
-#include "intel8259.h"
-#include "interrupt.h"
 #include "irq.h"
+#include "logger.h"
 #include "panic.h"
 #include "serial.h"
 
@@ -47,6 +46,9 @@
 // 複数のシリアルポートがある場合は、その中の1つがここにセットされる。
 // ＴＯＤＯ：シリアルポートが見当たらなかったときの処理は実装していない。
 io_addr_t global_serial_port;
+
+// シリアルポートが登録されているIRQの番号（※ ISA IRQではない）
+irq_t global_serial_port_irq = -1;
 
 // シリアルポートのボーレートを設定する関数。
 //      - port: ポートのI/Oアドレス
@@ -169,15 +171,26 @@ static void serial_irq_handler(struct regs_on_stack *regs)
 				sendb(global_serial_port, 'x');
 		}
 	}
-        // 本当は特定の割り込みコントローラの実装を使いたくなかったけど、、（ＴＯＤＯ：）
-        intel8259_end_of_interrupt(regs->vector - 32);
+        irq_eoi(global_serial_port_irq);
 }
 
 void serial_init_late()
 {
+        INFO("serial_init_late()");
         // COM1とCOM2の両方の割り込みハンドラの設定を行う。
-        set_irq_handler(isa_irq_to_irq(ISA_IRQ_COM1), serial_irq_handler);
-        set_irq_handler(isa_irq_to_irq(ISA_IRQ_COM2), serial_irq_handler);
+        switch (global_serial_port) {
+                case COM1_PORT:
+                        global_serial_port_irq = isa_irq_to_irq(ISA_IRQ_COM1);
+                        break;
+                case COM2_PORT:
+                        global_serial_port_irq = isa_irq_to_irq(ISA_IRQ_COM2);
+                        break;
+                default:
+                        PANIC("global_serial_port is not registered.");
+        }
+        DEBUG("global_serial_port_irq = %d", global_serial_port_irq);
+
+        set_irq_handler(global_serial_port_irq, serial_irq_handler);
 }
 
 int try_sendb(io_addr_t port, u8 data)
