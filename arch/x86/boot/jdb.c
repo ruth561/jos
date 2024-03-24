@@ -53,6 +53,8 @@ static void back_trace(struct regs_on_stack *regs)
 		ret_addr = get_ret_addr(rbp);
 		depth++;
 	}
+
+	while (1) Halt();
 }
 
 // ブレークポイントに達したときに発火するIRQハンドラ。

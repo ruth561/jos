@@ -37,6 +37,9 @@ static const char *exception_str[NR_EXCEPTIONS] = {
 	"VE",
 };
 
+#define GATE_TYPE_INTERRUPT	14
+#define GATE_TYPE_TRAP		15
+
 // IDTエントリのデータ構造
 struct gate_desc {
 	u16	offset_15_0;
@@ -243,7 +246,7 @@ void do_common_int_handler(struct regs_on_stack *regs)
 	get_irq_handler(regs->vector)(regs);
 }
 
-void set_idt_entry(int vector, void *handler)
+void set_idt_entry(int vector, void *handler, u8 type)
 {
 	CHECK(0 <= vector && vector < NR_IDT_ENTRIES);
 
@@ -254,7 +257,7 @@ void set_idt_entry(int vector, void *handler)
 	desc->offset_15_0 = address & 0xFFFF;
 	desc->offset_16_31 = (address >> 16) & 0xFFFF;
 	desc->offset_32_63 = (address >> 32) & 0xFFFFFFFF;
-	desc->bits.type = 14;
+	desc->bits.type = type;
 	desc->bits.dpl = 0;
 	desc->bits.p = 1;
 	desc->ss = get_cs();
@@ -274,8 +277,11 @@ void interrupt_init()
 	// ※ irqとvectorの番号が対応関係にある。
 	int vector = 0;
 	for (; vector < NR_IRQS; vector++) {
-		set_idt_entry(vector, int_handlers[vector]);
+		set_idt_entry(vector, int_handlers[vector], GATE_TYPE_INTERRUPT);
 	}
+
+	// #BPだけトラップゲートとして実装する
+	set_idt_entry(IRQ_BP, int_handlers[IRQ_BP], GATE_TYPE_TRAP);
 
 	// IRQの初期化をここで行う。
 	irq_init();
